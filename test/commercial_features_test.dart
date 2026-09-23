@@ -12,6 +12,7 @@ import 'package:reconix/services/historical_trend_service.dart';
 import 'package:reconix/services/pre_filing_validation_engine.dart';
 import 'package:reconix/services/itax_filing_bundle_service.dart';
 import 'package:reconix/services/erp_connector_service.dart';
+import 'package:reconix/services/license_service.dart';
 
 void main() {
   group('Commercial Feature Expansion Tests', () {
@@ -275,6 +276,13 @@ void main() {
 
       expect(qbRecords.length, 1);
       expect(qbRecords.first.invoiceNumber, 'QB-101');
+    });
+
+    test('LicenseService verifies master activation key 120196 and invalid keys correctly', () {
+      expect(LicenseService.verifyLicenseKey('120196'), true);
+      expect(LicenseService.verifyLicenseKey(' 120196 '), true);
+      expect(LicenseService.verifyLicenseKey('QUANTYX001'), true);
+      expect(LicenseService.verifyLicenseKey('INVALID_KEY_999'), false);
     });
   });
 }

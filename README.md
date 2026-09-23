@@ -183,8 +183,19 @@ reconix/
 
 ---
 
-## License & Maintainers
+## Commercial Licensing, Acquisition & Developer Contact
 
-- **Maintainer**: **Pearl Techno** ([Pearl-Techno/Reconix](https://github.com/Pearl-Techno/Reconix))
-- **Support Contact**: `dev@pearltechno.com`
-- **Copyright**: © 2026 Reconix Technologies. All rights reserved.
+- **Lead Developer**: **Davies Mukoya**
+- **Company**: **Quantyx Labs**
+- **Contact Email**: [`info@quantyx.co.ke`](mailto:info@quantyx.co.ke)
+- **WhatsApp / M-Pesa / Buy Coffee**: **`+254702687799`**
+- **Repository Maintenance**: **Pearl Techno** ([Pearl-Techno/Reconix](https://github.com/Pearl-Techno/Reconix))
+
+### Commercial Access & License Requirements
+
+> [!IMPORTANT]
+> **System Usage Policy**: Reconix is protected by an obfuscated First-Run Licensing & Activation Engine. Acquiring or cloning the codebase requires a minimum commercial fee of **KES 15,000**. On first execution, the system requires inputting an activation key (Master Key `120196` is built-in and verified via salted hash digest). The system license is valid for **365 days** and must be renewed annually for **KES 20,000** paid to account/till **`quantyx001`** (Quantyx Labs).
+
+- **Buy the Lead Engineer Coffee ☕**: Support ongoing development via M-Pesa: **`+254702687799`** (Davies Mukoya / Quantyx Labs).
+- **Copyright**: © 2026 Quantyx Labs & Reconix Technologies. All rights reserved.
+

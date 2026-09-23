@@ -20,6 +20,7 @@ import 'widgets/add_company_dialog.dart';
 import 'widgets/itax_invoice_checker_dialog.dart';
 import 'widgets/tax_law_reference_dialog.dart';
 import 'widgets/itax_filing_bundle_dialog.dart';
+import 'widgets/license_activation_dialog.dart';
 
 class MainLayout extends StatelessWidget {
   const MainLayout({super.key});
@@ -27,6 +28,16 @@ class MainLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
+
+    // Lock screen if system is unactivated or expired
+    if (state.licenseStatus != null && !state.licenseStatus!.isValid) {
+      return Scaffold(
+        backgroundColor: AppColors.darkBg,
+        body: Center(
+          child: const LicenseActivationDialog(isDismissible: false),
+        ),
+      );
+    }
 
     final views = [
       const GettingStartedView(),
@@ -516,6 +527,24 @@ class MainLayout extends StatelessWidget {
                                     context: context,
                                     builder: (context) => const ItaxInvoiceCheckerDialog(),
                                   );
+                                },
+                              ),
+                              const SizedBox(width: 8),
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.mintAccent,
+                                  side: const BorderSide(color: AppColors.mintAccent),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                                icon: const Icon(LucideIcons.keyRound, size: 14),
+                                label: Text(
+                                  state.licenseStatus?.daysRemaining != null
+                                      ? 'License: Active (${state.licenseStatus!.daysRemaining}d)'
+                                      : 'License Info',
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                                ),
+                                onPressed: () {
+                                  LicenseActivationDialog.show(context, isDismissible: true);
                                 },
                               ),
                               const SizedBox(width: 12),

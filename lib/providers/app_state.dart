@@ -17,10 +17,25 @@ import '../services/database_service.dart';
 import '../services/supplier_chaser_service.dart';
 import '../services/penalty_simulator_service.dart';
 import '../services/audit_defense_pack_service.dart';
+import '../services/license_service.dart';
 
 enum DataMode { demo, live }
 
 class AppState extends ChangeNotifier {
+  LicenseStatus? _licenseStatus;
+  LicenseStatus? get licenseStatus => _licenseStatus;
+
+  Future<void> checkLicenseStatus() async {
+    _licenseStatus = await LicenseService.getLicenseStatus();
+    notifyListeners();
+  }
+
+  Future<bool> activateLicenseKey(String key) async {
+    final success = await LicenseService.activateLicense(key);
+    await checkLicenseStatus();
+    return success;
+  }
+
   int _activeTab = 0;
   int get activeTab => _activeTab;
 
@@ -118,6 +133,7 @@ class AppState extends ChangeNotifier {
   }
 
   AppState() {
+    checkLicenseStatus();
     loadLiveScenarioFromDb();
   }
 
