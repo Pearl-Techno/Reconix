@@ -84,7 +84,7 @@ class LicenseService {
         activationDate: activationDate,
         expiryDate: expiryDate,
         daysRemaining: 0,
-        message: 'Annual license expired. Renew for KES 20,000 to Quantyx Labs (quantyx001).',
+        message: 'Annual license expired. Renew for KES 20,000 via M-Pesa Direct to +254702687799 (Davies Mukoya / Quantyx Labs).',
       );
     }
 

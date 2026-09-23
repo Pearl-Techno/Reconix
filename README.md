@@ -194,7 +194,7 @@ reconix/
 ### Commercial Access & License Requirements
 
 > [!IMPORTANT]
-> **System Usage Policy**: Reconix is protected by an obfuscated First-Run Licensing & Activation Engine. Acquiring or cloning the codebase requires a minimum commercial fee of **KES 15,000**. On first execution, the system requires entering an authorized activation license key issued upon payment verification by Quantyx Labs. The system license is valid for **365 days** and is renewable annually for **KES 20,000** paid to account/till **`quantyx001`** (Quantyx Labs).
+> **System Usage Policy**: Reconix is protected by an obfuscated First-Run Licensing & Activation Engine. Acquiring or cloning the codebase requires a minimum commercial fee of **KES 15,000**. On first execution, the system requires entering an authorized activation license key issued upon payment verification by Quantyx Labs. The system license is valid for **365 days** and is renewable annually for **KES 20,000** paid via M-Pesa Direct to **`+254702687799`** (Davies Mukoya / Quantyx Labs).
 
 - **Buy the Lead Engineer Coffee ☕**: Support ongoing development via M-Pesa: **`+254702687799`** (Davies Mukoya / Quantyx Labs).
 - **Copyright**: © 2026 Quantyx Labs & Reconix Technologies. All rights reserved.
