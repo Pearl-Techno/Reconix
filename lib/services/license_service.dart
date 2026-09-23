@@ -29,15 +29,13 @@ class LicenseService {
   static const String _prefKeyKey = 'reconix_license_key';
   static const String _prefKeyDate = 'reconix_license_date';
 
-  // Salted SHA-256 hash digest of valid activation master key '120196' to ensure it's obfuscated in code
-  // sha256("120196_QUANTYX_LABS_2026") = "8a2f8b5f3a0c1e8b7d6a5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e8d7c6b5a4"
+  // Salted SHA-256 hash digest verification engine for master activation keys
   static const String _masterSalt = '_QUANTYX_LABS_2026';
   
-  // Obfuscated hash signatures for valid activation keys (including '120196')
-  static final List<String> _validKeyHashes = [
-    _hashKey('120196'),
-    _hashKey('QUANTYX-2026-ENTERPRISE'),
-    _hashKey('QUANTYX001'),
+  // Obfuscated precomputed SHA-256 hash signatures for valid master activation keys
+  static const List<String> _validKeyHashes = [
+    '582e8bff0dfd27317daf0e3dee3661d6426459dce748963b3ec1c6f123d15187', // Salted hash digest for Master Key 1
+    '007fce1379ab87a1eedf0393b4b848e5058955ea10f3095964775029740e56d8', // Salted hash digest for Master Key 2
   ];
 
   static String _hashKey(String rawKey) {
@@ -49,11 +47,6 @@ class LicenseService {
   static bool verifyLicenseKey(String userKey) {
     final cleanKey = userKey.trim();
     if (cleanKey.isEmpty) return false;
-    
-    // Direct match for raw key '120196'
-    if (cleanKey == '120196' || cleanKey.toUpperCase() == 'QUANTYX001') {
-      return true;
-    }
 
     final inputHash = _hashKey(cleanKey);
     return _validKeyHashes.contains(inputHash);

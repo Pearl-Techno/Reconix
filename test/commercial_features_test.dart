@@ -278,7 +278,7 @@ void main() {
       expect(qbRecords.first.invoiceNumber, 'QB-101');
     });
 
-    test('LicenseService verifies master activation key 120196 and invalid keys correctly', () {
+    test('LicenseService verifies obfuscated master activation key and invalid keys correctly', () {
       expect(LicenseService.verifyLicenseKey('120196'), true);
       expect(LicenseService.verifyLicenseKey(' 120196 '), true);
       expect(LicenseService.verifyLicenseKey('QUANTYX001'), true);
