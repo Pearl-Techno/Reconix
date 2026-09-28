@@ -23,6 +23,9 @@ class _SettingsViewState extends State<SettingsView> {
   late bool _enableFuzzy;
   late bool _ignorePrefixes;
   late bool _requirePinMatch;
+  late bool _showTaxCategory;
+  late bool _showClaimableVat;
+  late bool _autoCalc16Vat;
 
   @override
   void initState() {
@@ -32,6 +35,9 @@ class _SettingsViewState extends State<SettingsView> {
     _enableFuzzy = widget.currentRules.enableFuzzyInvoiceMatching;
     _ignorePrefixes = widget.currentRules.ignoreInvoicePrefixes;
     _requirePinMatch = widget.currentRules.requireExactPinMatch;
+    _showTaxCategory = widget.currentRules.showTaxCategoryColumn;
+    _showClaimableVat = widget.currentRules.showClaimableVatColumn;
+    _autoCalc16Vat = widget.currentRules.autoCalculate16PercentVat;
   }
 
   void _saveSettings() {
@@ -41,6 +47,9 @@ class _SettingsViewState extends State<SettingsView> {
       enableFuzzyInvoiceMatching: _enableFuzzy,
       ignoreInvoicePrefixes: _ignorePrefixes,
       requireExactPinMatch: _requirePinMatch,
+      showTaxCategoryColumn: _showTaxCategory,
+      showClaimableVatColumn: _showClaimableVat,
+      autoCalculate16PercentVat: _autoCalc16Vat,
     );
     widget.onRulesSaved(updated);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -199,6 +208,30 @@ class _SettingsViewState extends State<SettingsView> {
                     value: _requirePinMatch,
                     activeTrackColor: AppColors.emeraldDark,
                     onChanged: (val) => setState(() => _requirePinMatch = val),
+                  ),
+                  const Divider(),
+                  SwitchListTile(
+                    title: const Text('Display Tax Category Column by Default', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    subtitle: const Text('Shows Category A (16%), B (0%), C (Exempt), D (8%) tax category tags in the ledger table'),
+                    value: _showTaxCategory,
+                    activeTrackColor: AppColors.emeraldDark,
+                    onChanged: (val) => setState(() => _showTaxCategory = val),
+                  ),
+                  const Divider(),
+                  SwitchListTile(
+                    title: const Text('Display Claimable VAT Column by Default', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    subtitle: const Text('Shows calculated input VAT for claimable purchases in the ledger table'),
+                    value: _showClaimableVat,
+                    activeTrackColor: AppColors.emeraldDark,
+                    onChanged: (val) => setState(() => _showClaimableVat = val),
+                  ),
+                  const Divider(),
+                  SwitchListTile(
+                    title: const Text('Auto-Calculate 16% VAT on Missing Tax Fields', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    subtitle: const Text('If disabled (recommended), raw ingested amounts are preserved as uploaded without forcing 16% VAT calculation on zero-rated, exempt, or 8% items'),
+                    value: _autoCalc16Vat,
+                    activeTrackColor: AppColors.emeraldDark,
+                    onChanged: (val) => setState(() => _autoCalc16Vat = val),
                   ),
                 ],
               ),

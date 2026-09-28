@@ -26,6 +26,15 @@ class ErpConnectorService {
       final taxable = rawAmount.abs() / 1.16;
       final vat = rawAmount.abs() - taxable;
 
+      final vchUpper = voucherSnippet.toUpperCase();
+      final isPurchase = vchUpper.contains('PURCHASE') ||
+          vchUpper.contains('BILL') ||
+          vchUpper.contains('EXPENSE') ||
+          vchUpper.contains('VENDOR') ||
+          vchUpper.contains('SUPPLIER') ||
+          vchUpper.contains('SEC B') ||
+          vchUpper.contains('INPUT');
+
       records.add(InvoiceRecord(
         id: 'TALLY-$index-${DateTime.now().millisecondsSinceEpoch}',
         invoiceNumber: invNo,
@@ -39,6 +48,7 @@ class ErpConnectorService {
         vatAmount: vat,
         totalAmount: rawAmount.abs(),
         sourceType: SourceType.erp,
+        sectionType: isPurchase ? SectionType.sectionBPurchases : SectionType.sectionASales,
         itemDescription: 'Tally Prime Voucher Entry',
       ));
       index++;
@@ -56,6 +66,12 @@ class ErpConnectorService {
     if (rows.isEmpty) return [];
 
     final List<InvoiceRecord> records = [];
+    final bool isCsvPurchase = csvContent.toLowerCase().contains('purchase') ||
+        csvContent.toLowerCase().contains('vendor') ||
+        csvContent.toLowerCase().contains('supplier') ||
+        csvContent.toLowerCase().contains('bill') ||
+        csvContent.toLowerCase().contains('expense');
+
     for (int i = 1; i < rows.length; i++) {
       final row = rows[i];
       if (row.length < 4 || row.every((c) => c.toString().trim().isEmpty)) continue;
@@ -66,6 +82,14 @@ class ErpConnectorService {
       final total = row.length > 3 ? (double.tryParse(row[3].toString().replaceAll(',', '')) ?? 0.0) : 0.0;
       final vat = total * (0.16 / 1.16);
       final taxable = total - vat;
+
+      final rowUpper = row.join(' ').toUpperCase();
+      final isRowPurchase = isCsvPurchase ||
+          rowUpper.contains('PURCHASE') ||
+          rowUpper.contains('VENDOR') ||
+          rowUpper.contains('SUPPLIER') ||
+          rowUpper.contains('BILL') ||
+          rowUpper.contains('EXPENSE');
 
       records.add(InvoiceRecord(
         id: 'QB-$i-${DateTime.now().millisecondsSinceEpoch}',
@@ -80,6 +104,7 @@ class ErpConnectorService {
         vatAmount: vat,
         totalAmount: total,
         sourceType: SourceType.erp,
+        sectionType: isRowPurchase ? SectionType.sectionBPurchases : SectionType.sectionASales,
         itemDescription: 'QuickBooks Ingested Journal',
       ));
     }

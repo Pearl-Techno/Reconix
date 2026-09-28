@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../models/invoice_record.dart';
 import '../services/data_ingestion_service.dart';
-import '../services/demo_data_generator.dart';
 import '../theme/app_theme.dart';
 import 'widgets/csv_ingestion_summary_dialog.dart';
 import 'widgets/erp_integration_guide_dialog.dart';
@@ -30,7 +29,7 @@ class _IngestionViewState extends State<IngestionView> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -42,6 +41,8 @@ class _IngestionViewState extends State<IngestionView> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
+    final erpPurchases = state.erpRecords.where((r) => r.sectionType != SectionType.sectionASales).toList();
+    final erpSales = state.erpRecords.where((r) => r.sectionType == SectionType.sectionASales).toList();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -58,28 +59,55 @@ class _IngestionViewState extends State<IngestionView> with SingleTickerProvider
                     Text('Multi-Source Data Ingestion Hub', style: Theme.of(context).textTheme.headlineMedium),
                     const SizedBox(height: 4),
                     Text(
-                      'Ingest data from eTIMS exports, internal accounting books (ERP/POS), and iTax pre-filled VAT schedules.',
+                      'Ingest Sales & Purchase Ledgers (B2B/B2C), eTIMS server dumps, and iTax pre-filled VAT schedules.',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 16),
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.kraGold,
-                  side: const BorderSide(color: AppColors.kraGold),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                ),
-                icon: const Icon(LucideIcons.fileSpreadsheet, size: 16),
-                label: const Text('Sample CSV Templates', style: TextStyle(fontWeight: FontWeight.bold)),
-                onPressed: () => SampleTemplatesDialog.show(context),
+              Row(
+                children: [
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.kraGold,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    icon: const Icon(LucideIcons.download, size: 16),
+                    label: const Text('Export KRA iTax Filing CSV', style: TextStyle(fontWeight: FontWeight.bold)),
+                    onPressed: () {
+                      final savedPath = state.exportITaxSectionBCsv();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            savedPath != null
+                                ? 'Exported & saved to $savedPath'
+                                : 'Exported 3-way matched claimable records to KRA iTax Section B CSV format!',
+                          ),
+                          backgroundColor: AppColors.emeraldPrimary,
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 12),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.kraGold,
+                      side: const BorderSide(color: AppColors.kraGold),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    icon: const Icon(LucideIcons.fileSpreadsheet, size: 16),
+                    label: const Text('Sample CSV Templates', style: TextStyle(fontWeight: FontWeight.bold)),
+                    onPressed: () => SampleTemplatesDialog.show(context),
+                  ),
+                ],
               ),
             ],
           ),
           const SizedBox(height: 24),
 
-          // 3 Source Upload Cards Row
+          // 4 Source Upload Cards Row
           Row(
             children: [
               Expanded(
@@ -91,30 +119,46 @@ class _IngestionViewState extends State<IngestionView> with SingleTickerProvider
                   sourceType: SourceType.etims,
                   count: state.etimsRecords.length,
                   color: AppColors.mintAccent,
+                  buttonLabel: 'Upload eTIMS File',
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: _buildUploadCard(
                   context,
-                  title: '2. ERP / Internal Books',
-                  description: 'Upload Purchase Ledger CSV from QuickBooks, SAP, Sage, Tally, or custom POS.',
-                  icon: LucideIcons.bookOpen,
+                  title: '2. ERP Purchase Ledger (Sec B)',
+                  description: 'Upload Input VAT Purchases (QuickBooks, SAP, Sage, Tally) with or without Supplier KRA PINs.',
+                  icon: LucideIcons.shoppingBag,
                   sourceType: SourceType.erp,
-                  count: state.erpRecords.length,
+                  count: erpPurchases.length,
                   color: AppColors.infoBlue,
+                  buttonLabel: 'Upload Purchase Ledger',
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: _buildUploadCard(
                   context,
-                  title: '3. iTax Schedule CSV',
+                  title: '3. ERP Sales Ledger (Sec A)',
+                  description: 'Upload Output VAT Sales register with Customer KRA PINs or Walk-in B2C Consumer cash sales.',
+                  icon: LucideIcons.arrowUpRight,
+                  sourceType: SourceType.erp,
+                  count: erpSales.length,
+                  color: AppColors.emeraldPrimary,
+                  buttonLabel: 'Upload Sales Ledger',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildUploadCard(
+                  context,
+                  title: '4. iTax Schedule CSV',
                   description: 'Upload auto-populated pre-filled Section B input VAT schedule downloaded from iTax.',
                   icon: LucideIcons.fileSpreadsheet,
                   sourceType: SourceType.itax,
                   count: state.itaxRecords.length,
                   color: AppColors.kraGold,
+                  buttonLabel: 'Upload iTax Schedule',
                 ),
               ),
             ],
@@ -148,7 +192,7 @@ class _IngestionViewState extends State<IngestionView> with SingleTickerProvider
                               Text('Ingested Dataset Tables', style: Theme.of(context).textTheme.titleLarge),
                               const SizedBox(height: 2),
                               const Text(
-                                'View line-by-line ingested records across eTIMS/TIMS, ERP, and iTax schedules',
+                                'View line-by-line ingested records separated across Purchases (Sec B), Sales (Sec A), eTIMS, and iTax schedules',
                                 style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                               ),
                             ],
@@ -181,9 +225,11 @@ class _IngestionViewState extends State<IngestionView> with SingleTickerProvider
                     indicatorColor: AppColors.mintAccent,
                     labelColor: AppColors.mintAccent,
                     unselectedLabelColor: AppColors.textSecondary,
+                    isScrollable: true,
                     tabs: [
-                      Tab(text: 'eTIMS / TIMS Records (${state.etimsRecords.length})'),
-                      Tab(text: 'ERP Ledger (${state.erpRecords.length})'),
+                      Tab(text: 'eTIMS Records (${state.etimsRecords.length})'),
+                      Tab(text: 'Purchase Ledger Sec B (${erpPurchases.length})'),
+                      Tab(text: 'Sales Ledger Sec A (${erpSales.length})'),
                       Tab(text: 'iTax Schedule (${state.itaxRecords.length})'),
                     ],
                   ),
@@ -195,7 +241,8 @@ class _IngestionViewState extends State<IngestionView> with SingleTickerProvider
                       controller: _tabController,
                       children: [
                         _buildDataTableForSource(state.etimsRecords),
-                        _buildDataTableForSource(state.erpRecords),
+                        _buildDataTableForSource(erpPurchases),
+                        _buildDataTableForSource(erpSales),
                         _buildDataTableForSource(state.itaxRecords),
                       ],
                     ),
@@ -227,11 +274,11 @@ class _IngestionViewState extends State<IngestionView> with SingleTickerProvider
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Pre-Loaded Realistic Kenyan Datasets', style: Theme.of(context).textTheme.titleLarge),
+                          Text('Pre-Loaded VAT Dataset: ${state.activeClient.businessName}', style: Theme.of(context).textTheme.titleLarge),
                           const SizedBox(height: 2),
-                          const Text(
-                            'Instantly test the 3-way matching engine with real Kenyan VAT market scenarios',
-                            style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                          Text(
+                            'Pre-configured 3-way matching dataset scoped exclusively for ${state.activeClient.businessName} (PIN: ${state.activeClient.kraPin})',
+                            style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
                           ),
                         ],
                       ),
@@ -239,65 +286,29 @@ class _IngestionViewState extends State<IngestionView> with SingleTickerProvider
                   ),
                   const SizedBox(height: 20),
 
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildScenarioCard(
-                          context,
-                          title: 'Scenario 1: Apex Logistics Ltd',
-                          badge: 'Mid-Month & eTIMS Latency',
-                          badgeColor: AppColors.infoBlue,
-                          description: '14 Invoices covering Safaricom, KPLC, Fuel (8%), Crown Paints timing delay & Bamburi Cement unclaimed VAT.',
-                          onSelect: () {
-                            state.loadDemoScenario(DemoDataGenerator.generateApexLogistics());
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Loaded Apex Logistics Kenya Ltd dataset!'),
-                                backgroundColor: AppColors.emeraldPrimary,
-                              ),
-                            );
-                          },
+                  _buildScenarioCard(
+                    context,
+                    title: 'Active Entity Dataset: ${state.activeClient.businessName}',
+                    badge: state.activeClient.riskStatus == 'READY_TO_FILE'
+                        ? 'Clean Matched Baseline'
+                        : (state.activeClient.riskStatus == 'HIGH_RISK'
+                            ? 'High VAA (Value Added Automated Audit) Exposure Risk'
+                            : 'Active VAT Compliance Ledger'),
+                    badgeColor: state.activeClient.riskStatus == 'READY_TO_FILE'
+                        ? AppColors.mintAccent
+                        : (state.activeClient.riskStatus == 'HIGH_RISK' ? AppColors.crimsonRisk : AppColors.infoBlue),
+                    description:
+                        'Ingested 3-way audit dataset containing ${state.activeClient.totalInvoicesCount} invoices strictly isolated to ${state.activeClient.businessName} '
+                        '(KRA PIN: ${state.activeClient.kraPin} • Sector: ${state.activeClient.sector}).',
+                    onSelect: () {
+                      state.selectClient(state.activeClient);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Re-loaded 3-way dataset for ${state.activeClient.businessName}!'),
+                          backgroundColor: AppColors.emeraldPrimary,
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildScenarioCard(
-                          context,
-                          title: 'Scenario 2: Nairobi Retailers',
-                          badge: 'High VAA Exposure Risk',
-                          badgeColor: AppColors.crimsonRisk,
-                          description: '32 Invoices with KES 624,500 disallowance risk, missing supplier PINs & 2026 expense deduction threats.',
-                          onSelect: () {
-                            state.selectClient(DemoDataGenerator.getAdvisorClients()[1]);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Loaded Nairobi Commercial Retailers dataset!'),
-                                backgroundColor: AppColors.warningOrange,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildScenarioCard(
-                          context,
-                          title: 'Scenario 3: Rift Valley Agri',
-                          badge: 'Clean Matched Baseline',
-                          badgeColor: AppColors.mintAccent,
-                          description: '22 Invoices with 100% perfect 3-way match, zero-rated exports, and zero VAA penalty exposure.',
-                          onSelect: () {
-                            state.selectClient(DemoDataGenerator.getAdvisorClients()[2]);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Loaded Rift Valley Agriculture Exporters dataset!'),
-                                backgroundColor: AppColors.mintAccent,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ],
               ),
@@ -439,6 +450,7 @@ class _IngestionViewState extends State<IngestionView> with SingleTickerProvider
     required SourceType sourceType,
     required int count,
     required Color color,
+    String? buttonLabel,
   }) {
     return Card(
       child: Padding(
@@ -479,7 +491,7 @@ class _IngestionViewState extends State<IngestionView> with SingleTickerProvider
                 minimumSize: const Size(double.infinity, 44),
               ),
               icon: const Icon(LucideIcons.uploadCloud, size: 18),
-              label: Text('Upload ${sourceType.shortCode} File (CSV / Excel)'),
+              label: Text(buttonLabel ?? 'Upload ${sourceType.shortCode} File (CSV / Excel)'),
               onPressed: () async {
                 try {
                   final result = await FilePicker.platform.pickFiles(
@@ -507,6 +519,7 @@ class _IngestionViewState extends State<IngestionView> with SingleTickerProvider
                         bytes: bytes,
                         sourceType: sourceType,
                         defaultTaxPeriod: '2026-08',
+                        autoCalculate16PercentVat: state.rules.autoCalculate16PercentVat,
                       );
 
                       state.setIsIngesting(false);
@@ -554,6 +567,46 @@ class _IngestionViewState extends State<IngestionView> with SingleTickerProvider
                 }
               },
             ),
+            if (count > 0) ...[
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.crimsonRisk,
+                  side: BorderSide(color: AppColors.crimsonRisk.withValues(alpha: 0.4)),
+                  minimumSize: const Size(double.infinity, 36),
+                ),
+                icon: const Icon(LucideIcons.trash2, size: 14),
+                label: Text('Clear ${sourceType.shortCode} Data ($count)'),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (dialogCtx) => AlertDialog(
+                      title: Text('Remove ${sourceType.shortCode} Records?'),
+                      content: Text('Are you sure you want to remove all $count ingested ${sourceType.displayName} records? This will clear the dataset so you can re-upload a fresh file.'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.crimsonRisk, foregroundColor: Colors.white),
+                          icon: const Icon(LucideIcons.trash2, size: 16),
+                          label: const Text('Clear Dataset'),
+                          onPressed: () async {
+                            Navigator.pop(dialogCtx);
+                            await context.read<AppState>().clearSourceDataset(sourceType);
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('${sourceType.shortCode} dataset cleared. You can now upload a fresh file.'),
+                                backgroundColor: AppColors.emeraldPrimary,
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
             if (sourceType == SourceType.erp) ...[
               const SizedBox(height: 8),
               Center(

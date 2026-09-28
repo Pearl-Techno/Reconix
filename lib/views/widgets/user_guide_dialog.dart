@@ -127,7 +127,7 @@ class _UserGuideDialogState extends State<UserGuideDialog> with SingleTickerProv
       _sectionHeader('1. Executive Overview & System Architecture'),
       _sectionBody(
         'Reconix is an enterprise-grade Kenyan VAT 3-Way Reconciliation & Audit Evidence Platform. '
-        'It is designed to protect corporate taxpayers and audit firms from KRA VAA (VAT Automated Assessments) back-tax disallowances '
+        'It is designed to protect corporate taxpayers and audit firms from KRA VAA (Value Added Automated Audit) back-tax disallowances '
         'and Section 16(1) expense deductibility penalties.',
       ),
       const SizedBox(height: 12),
@@ -149,7 +149,7 @@ class _UserGuideDialogState extends State<UserGuideDialog> with SingleTickerProv
       _stepBox(
         stepNum: 'Step 2',
         title: '3-Way Reconciliation',
-        description: 'Review matched, timing latency, unclaimed input VAT, and VAA disallowance risk records in the 3-Way Matching Ledger.',
+        description: 'Review matched, timing latency, unclaimed input VAT, and VAA (Value Added Automated Audit) disallowance risk records in the 3-Way Matching Ledger.',
       ),
       _stepBox(
         stepNum: 'Step 3',
@@ -172,7 +172,7 @@ class _UserGuideDialogState extends State<UserGuideDialog> with SingleTickerProv
       ),
       const SizedBox(height: 10),
       _bulletPoint('Section A (Output VAT Sales): Auto-formatted sales register schedule.'),
-      _bulletPoint('Section B (Input VAT Purchases): Sanitized list containing ONLY 3-way verified claimable input VAT records, stripping disallowances to eliminate VAA audits.'),
+      _bulletPoint('Section B (Input VAT Purchases): Sanitized list containing ONLY 3-way verified claimable input VAT records, stripping disallowances to eliminate VAA (Value Added Automated Audit) audits.'),
       _bulletPoint('Section C (Customs Import VAT): Verified C17 entry schedules.'),
       _bulletPoint('Section D (2% WHVAT Credits): Reconciled 2% withholding VAT certificates.'),
     ]);

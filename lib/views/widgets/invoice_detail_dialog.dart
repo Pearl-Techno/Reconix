@@ -28,7 +28,7 @@ class _InvoiceDetailDialogState extends State<InvoiceDetailDialog> {
     'Cleared for VAT Return Filing',
     'Pending eTIMS from Supplier',
     'Systemic Timing Delay - Claim Next Month',
-    'VAA Penalty Defense Logged',
+    'VAA (Value Added Automated Audit) Penalty Defense Logged',
     'Exclude from Input VAT Claim',
     'Disputed Amount with Supplier',
   ];
@@ -156,7 +156,74 @@ class _InvoiceDetailDialogState extends State<InvoiceDetailDialog> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
+
+              // Tax Classification & VAT Rate Banner
+              Builder(
+                builder: (context) {
+                  final primaryRecord = match.erpRecord ?? match.etimsRecord ?? match.itaxRecord;
+                  final taxClass = primaryRecord?.effectiveTaxClassification ?? TaxClassification.standard16;
+
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.darkBg,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.darkBorder),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: taxClass == TaxClassification.zeroRated
+                                ? AppColors.infoBlue.withValues(alpha: 0.2)
+                                : (taxClass == TaxClassification.exempt
+                                    ? AppColors.kraGold.withValues(alpha: 0.2)
+                                    : AppColors.mintAccent.withValues(alpha: 0.2)),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: taxClass == TaxClassification.zeroRated
+                                  ? AppColors.infoBlue
+                                  : (taxClass == TaxClassification.exempt ? AppColors.kraGold : AppColors.mintAccent),
+                              width: 0.5,
+                            ),
+                          ),
+                          child: Text(
+                            taxClass.displayName,
+                            style: TextStyle(
+                              color: taxClass == TaxClassification.zeroRated
+                                  ? AppColors.infoBlue
+                                  : (taxClass == TaxClassification.exempt ? AppColors.kraGold : AppColors.mintAccent),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'KRA VAT ACT STATUTORY CLASSIFICATION:',
+                                style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                taxClass.statutoryExplanation,
+                                style: const TextStyle(color: AppColors.textPrimary, fontSize: 11),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
 
               // 3-Way Comparative Grid
               Text('3-Way Source Comparison', style: Theme.of(context).textTheme.titleLarge),

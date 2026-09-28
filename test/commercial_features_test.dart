@@ -278,6 +278,43 @@ void main() {
       expect(qbRecords.first.invoiceNumber, 'QB-101');
     });
 
+    test('DataIngestionService parses Tally Prime Sales Register with title header block and DD-MMM-YY dates correctly', () {
+      const tallySalesRegisterCsv = '''
+Mineksha Healthcare Limited,,,,,,
+Kilimani, Naiobi,,,,,,
+P.O.Box 22780-00505,,,,,,
+E-Mail : Minekshahealthcare@gmail.com,,,,,,
+Sales Register,,,,,,
+1-Feb-26 to 31-Aug-26,,,,,,
+Date,Particulars,Vch Type,Vch No.,Debit Amount,Credit Amount
+04-Feb-26,Lifemed Pharmacy Limited,Sales,KRACU0200119725/257,7506.00,
+05-Feb-26,Wama Hospital,Sales,KRACU0200119725/259,7800.00,
+24-Feb-26,Saicare Enterprises Ltd - DR,Sales,KRACU0200119725/280,900000.00,
+''';
+
+      final res = DataIngestionService.parseCsvWithDiagnostics(
+        csvContent: tallySalesRegisterCsv,
+        sourceType: SourceType.erp,
+        defaultTaxPeriod: '2026-02',
+      );
+
+      expect(res.records.length, 3);
+
+      final rec1 = res.records[0];
+      expect(rec1.buyerName, 'Lifemed Pharmacy Limited');
+      expect(rec1.invoiceNumber, 'KRACU0200119725/257');
+      expect(rec1.etimsControlCode, 'KRACU0200119725/257');
+      expect(rec1.cuSerialNumber, 'KRACU0200119725');
+      expect(rec1.invoiceDate, DateTime(2026, 2, 4));
+      expect(rec1.totalAmount, 7506.00);
+      expect(rec1.sectionType, SectionType.sectionASales);
+
+      final rec3 = res.records[2];
+      expect(rec3.buyerName, 'Saicare Enterprises Ltd - DR');
+      expect(rec3.invoiceDate, DateTime(2026, 2, 24));
+      expect(rec3.totalAmount, 900000.00);
+    });
+
     test('LicenseService verifies obfuscated master activation key and invalid keys correctly', () {
       expect(LicenseService.verifyLicenseKey('120196'), true);
       expect(LicenseService.verifyLicenseKey(' 120196 '), true);

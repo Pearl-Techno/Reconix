@@ -146,7 +146,7 @@ class _SupplierRiskViewState extends State<SupplierRiskView> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Monitor vendor compliance, identify VAA exposure, and issue automated Demand Notices.',
+                    'Monitor vendor compliance, identify VAA (Value Added Automated Audit) exposure, and issue automated Demand Notices.',
                     style: TextStyle(
                       fontSize: 13,
                       color: AppColors.textSecondary,
@@ -252,7 +252,7 @@ class _SupplierRiskViewState extends State<SupplierRiskView> {
                   SegmentedButton<String>(
                     segments: const [
                       ButtonSegment(value: 'All', label: Text('All Vendors')),
-                      ButtonSegment(value: 'High Risk', label: Text('High VAA Risk')),
+                      ButtonSegment(value: 'High Risk', label: Text('High VAA (Value Added Automated Audit) Risk')),
                       ButtonSegment(value: 'Compliant', label: Text('Compliant')),
                     ],
                     selected: {_selectedFilter},

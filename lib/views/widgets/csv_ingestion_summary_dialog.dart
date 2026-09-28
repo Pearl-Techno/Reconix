@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:provider/provider.dart';
 import '../../models/invoice_record.dart';
+import '../../providers/app_state.dart';
 import '../../services/data_ingestion_service.dart';
+import '../../services/itax_export_service.dart';
 import '../../theme/app_theme.dart';
 
 enum PinFilterMode { all, withPin, noPin }
@@ -215,6 +218,40 @@ class _CsvIngestionSummaryDialogState extends State<CsvIngestionSummaryDialog> w
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
                       child: const Text('Cancel Upload'),
+                    ),
+                    const SizedBox(width: 12),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.kraGold,
+                        side: const BorderSide(color: AppColors.kraGold),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      ),
+                      icon: const Icon(LucideIcons.download, size: 16),
+                      label: Text(
+                        'Export iTax Section B CSV (${res.recordsWithPinCount})',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      onPressed: () {
+                        final state = context.read<AppState>();
+                        final csvContent = ITaxExportService.generateFromInvoiceRecords(
+                          client: state.activeClient,
+                          taxPeriod: state.selectedTaxPeriod,
+                          records: res.records,
+                        );
+                        final cleanFileName = widget.fileName.replaceAll('.csv', '').replaceAll('.xlsx', '').replaceAll(' ', '_');
+                        final fileName = 'KRA_iTax_SectionB_Export_${state.activeClient.kraPin}_$cleanFileName.csv';
+                        final savedPath = ITaxExportService.downloadCsvWeb(csvData: csvContent, fileName: fileName);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              savedPath != null
+                                  ? 'Saved to $savedPath (${res.recordsWithPinCount} records)'
+                                  : 'Exported ${res.recordsWithPinCount} claimable matching records to KRA iTax Section B format!',
+                            ),
+                            backgroundColor: AppColors.emeraldPrimary,
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton.icon(

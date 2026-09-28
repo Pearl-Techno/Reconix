@@ -28,7 +28,7 @@ class EvidencePackView extends StatelessWidget {
           Text('Audit Evidence Hub & Reconciliation Certificates', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 4),
           Text(
-            'Generate non-mutable, timestamped audit evidence packs to defend input VAT claims against KRA VAA disallowances and Section 16(1) 2026 expense rules.',
+            'Generate non-mutable, timestamped audit evidence packs to defend input VAT claims against KRA VAA (Value Added Automated Audit) disallowances and Section 16(1) 2026 expense rules.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 24),
@@ -250,7 +250,7 @@ class EvidencePackView extends StatelessWidget {
                       ),
                       TableRow(
                         children: [
-                          _tableCell('4. VAA Penalty Exposure & 2026 Expense Risk'),
+                          _tableCell('4. VAA (Value Added Automated Audit) Penalty Exposure & 2026 Expense Risk'),
                           _tableCell('${cert.vaaDisallowanceCount + cert.expenseValidationRiskCount} Invoices'),
                           _tableCell('KES ${numberFormat.format(cert.total2026ExpenseDeductibilityRisk)}', color: AppColors.crimsonRisk, isBold: true),
                         ],

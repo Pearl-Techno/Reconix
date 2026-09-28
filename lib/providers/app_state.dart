@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:crypto/crypto.dart';
+import 'package:intl/intl.dart';
 import '../models/invoice_record.dart';
 import '../models/reconciliation_match.dart';
 import '../models/taxpayer_client.dart';
@@ -8,6 +9,7 @@ import '../models/reconciliation_certificate.dart';
 import '../models/reconciliation_rules.dart';
 import '../models/whvat_record.dart';
 import '../models/customs_entry_record.dart';
+import '../models/customs_match_result.dart';
 import '../models/audit_log_entry.dart';
 import '../services/demo_data_generator.dart';
 import '../services/reconciliation_engine.dart';
@@ -42,6 +44,28 @@ class AppState extends ChangeNotifier {
   ReconciliationRules _rules = const ReconciliationRules();
   ReconciliationRules get rules => _rules;
 
+  ReconciliationMode get reconciliationMode => _rules.mode;
+
+  void setReconciliationMode(ReconciliationMode mode) {
+    _rules = _rules.copyWith(mode: mode);
+    runReconciliation();
+  }
+
+  void toggleTaxCategoryColumn() {
+    _rules = _rules.copyWith(showTaxCategoryColumn: !_rules.showTaxCategoryColumn);
+    notifyListeners();
+  }
+
+  void toggleClaimableVatColumn() {
+    _rules = _rules.copyWith(showClaimableVatColumn: !_rules.showClaimableVatColumn);
+    notifyListeners();
+  }
+
+  void toggleAutoCalculate16PercentVat() {
+    _rules = _rules.copyWith(autoCalculate16PercentVat: !_rules.autoCalculate16PercentVat);
+    runReconciliation();
+  }
+
   void updateRules(ReconciliationRules newRules) {
     _rules = newRules;
     runReconciliation();
@@ -50,10 +74,24 @@ class AppState extends ChangeNotifier {
   DataMode _dataMode = DataMode.live;
   DataMode get dataMode => _dataMode;
 
-  TaxpayerClient _activeClient = DemoDataGenerator.generateApexLogistics().client;
+  TaxpayerClient _activeClient = const TaxpayerClient(
+    id: 'CLI-PRIMARY-001',
+    businessName: 'Primary Taxpayer Entity',
+    kraPin: 'P051000000Z',
+    vatRegistrationNo: 'VAT-051000000Z',
+    contactEmail: 'tax@taxpayer.co.ke',
+    sector: 'Commercial Operations',
+    currentTaxPeriod: '2026-08',
+    totalMonthlyPurchases: 0.0,
+    inputVatClaimable: 0.0,
+    inputVatAtRisk: 0.0,
+    totalInvoicesCount: 0,
+    matchedInvoicesCount: 0,
+    riskStatus: 'READY_TO_FILE',
+  );
   TaxpayerClient get activeClient => _activeClient;
 
-  final List<TaxpayerClient> _advisorClients = DemoDataGenerator.getAdvisorClients();
+  List<TaxpayerClient> _advisorClients = [];
   List<TaxpayerClient> get advisorClients => _advisorClients;
 
   String _selectedTaxPeriod = 'August 2026';
@@ -81,6 +119,26 @@ class AppState extends ChangeNotifier {
   RiskLevel? _selectedRiskFilter;
   RiskLevel? get selectedRiskFilter => _selectedRiskFilter;
 
+  String _selectedMonthFilter = 'All Months';
+  String get selectedMonthFilter => _selectedMonthFilter;
+
+  List<String> get availableMonths {
+    final set = <String>{'All Months'};
+    final fmt = DateFormat('MMMM yyyy');
+    for (var m in _reconciliationResults) {
+      set.add(fmt.format(m.invoiceDate));
+    }
+    for (var r in _erpRecords) {
+      set.add(fmt.format(r.invoiceDate));
+    }
+    for (var r in _itaxRecords) {
+      set.add(fmt.format(r.invoiceDate));
+    }
+    final sorted = set.where((e) => e != 'All Months').toList();
+    sorted.sort((a, b) => b.compareTo(a));
+    return ['All Months', ...sorted];
+  }
+
   bool _isProcessing = false;
   bool get isProcessing => _isProcessing;
 
@@ -100,6 +158,9 @@ class AppState extends ChangeNotifier {
 
   final List<CustomsEntryRecord> _customsEntries = [];
   List<CustomsEntryRecord> get customsEntries => _customsEntries;
+
+  List<CustomsMatchResult> _customsMatches = [];
+  List<CustomsMatchResult> get customsMatches => _customsMatches;
 
   UserRole _currentUserRole = UserRole.seniorTaxManager;
   UserRole get currentUserRole => _currentUserRole;
@@ -151,14 +212,15 @@ class AppState extends ChangeNotifier {
   Future<void> loadLiveScenarioFromDb() async {
     final liveClients = await DatabaseService.getClients(isDemo: false);
     if (liveClients.isNotEmpty) {
+      _advisorClients = liveClients;
       _activeClient = liveClients.first;
     } else {
-      _activeClient = TaxpayerClient(
-        id: 'LIVE-CLI-001',
-        businessName: 'Live Taxpayer Entity Ltd',
-        kraPin: 'P059999999Z',
-        vatRegistrationNo: 'VAT-059999999Z',
-        contactEmail: 'tax@liveentity.co.ke',
+      _activeClient = const TaxpayerClient(
+        id: 'CLI-PRIMARY-001',
+        businessName: 'Primary Taxpayer Entity',
+        kraPin: 'P051000000Z',
+        vatRegistrationNo: 'VAT-051000000Z',
+        contactEmail: 'tax@taxpayer.co.ke',
         sector: 'Commercial Operations',
         currentTaxPeriod: '2026-08',
         totalMonthlyPurchases: 0.0,
@@ -169,6 +231,7 @@ class AppState extends ChangeNotifier {
         riskStatus: 'READY_TO_FILE',
       );
       await DatabaseService.insertClient(_activeClient, isDemo: false);
+      _advisorClients = [_activeClient];
     }
 
     await refreshInvoicesForActiveClient();
@@ -179,6 +242,10 @@ class AppState extends ChangeNotifier {
       _erpRecords = await DatabaseService.getInvoices(clientId: _activeClient.id, sourceType: SourceType.erp, isDemo: false);
       _etimsRecords = await DatabaseService.getInvoices(clientId: _activeClient.id, sourceType: SourceType.etims, isDemo: false);
       _itaxRecords = await DatabaseService.getInvoices(clientId: _activeClient.id, sourceType: SourceType.itax, isDemo: false);
+      _whvatRecords.clear();
+      _whvatRecords.addAll(await DatabaseService.getWhvatRecords(isDemo: false));
+      _customsEntries.clear();
+      _customsEntries.addAll(await DatabaseService.getCustomsEntries(isDemo: false));
     }
     runReconciliation();
   }
@@ -197,6 +264,7 @@ class AppState extends ChangeNotifier {
     _dataMode = DataMode.demo;
     final ds = dataSet ?? DemoDataGenerator.generateApexLogistics();
     _activeClient = ds.client;
+    _advisorClients = DemoDataGenerator.getAdvisorClients();
     _erpRecords = List.from(ds.erpRecords);
     _etimsRecords = List.from(ds.etimsRecords);
     _itaxRecords = List.from(ds.itaxRecords);
@@ -221,6 +289,33 @@ class AppState extends ChangeNotifier {
     runReconciliation();
   }
 
+  Future<void> clearSourceDataset(SourceType sourceType) async {
+    if (sourceType == SourceType.itax) {
+      _itaxRecords.clear();
+    } else if (sourceType == SourceType.erp) {
+      _erpRecords.clear();
+    } else if (sourceType == SourceType.etims) {
+      _etimsRecords.clear();
+    }
+
+    if (_dataMode == DataMode.live) {
+      await DatabaseService.deleteInvoicesBySource(
+        clientId: _activeClient.id,
+        sourceType: sourceType,
+        isDemo: false,
+      );
+    }
+
+    await logAuditAction(
+      action: 'CLEAR_DATASET',
+      targetKey: sourceType.name.toUpperCase(),
+      details: 'Cleared ${sourceType.displayName} dataset records to allow re-upload.',
+    );
+
+    runReconciliation();
+    notifyListeners();
+  }
+
   Future<void> addLiveWhvatRecords(List<WhvatRecord> records) async {
     _dataMode = DataMode.live;
     _whvatRecords.addAll(records);
@@ -232,13 +327,21 @@ class AppState extends ChangeNotifier {
     _dataMode = DataMode.live;
     _customsEntries.addAll(entries);
     await DatabaseService.insertCustomsEntries(entries, isDemo: false);
-    notifyListeners();
+    runCustomsReconciliation();
   }
 
   void runWhvatReconciliation() {
     _whvatMatches = ReconciliationEngine.reconcileWhvat(
       whvatRecords: _whvatRecords,
       invoiceRecords: [..._erpRecords, ..._etimsRecords],
+    );
+    notifyListeners();
+  }
+
+  void runCustomsReconciliation() {
+    _customsMatches = ReconciliationEngine.reconcileCustoms(
+      customsEntries: _customsEntries,
+      erpRecords: _erpRecords,
     );
     notifyListeners();
   }
@@ -252,10 +355,9 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> addNewCompany(TaxpayerClient newClient) async {
-    if (!_advisorClients.any((c) => c.id == newClient.id)) {
-      _advisorClients.insert(0, newClient);
-    }
-    await DatabaseService.insertClient(newClient, isDemo: _dataMode == DataMode.demo);
+    _dataMode = DataMode.live;
+    await DatabaseService.insertClient(newClient, isDemo: false);
+    _advisorClients = await DatabaseService.getClients(isDemo: false);
     await selectClient(newClient);
   }
 
@@ -263,11 +365,7 @@ class AppState extends ChangeNotifier {
     _activeClient = client;
     clearSelection();
     if (_dataMode == DataMode.demo) {
-      if (client.id == 'CLI-001') {
-        loadDemoScenario(DemoDataGenerator.generateApexLogistics());
-      } else {
-        loadDemoScenario();
-      }
+      loadDemoScenario(DemoDataGenerator.getDatasetForClient(client));
     } else {
       await refreshInvoicesForActiveClient();
     }
@@ -305,6 +403,14 @@ class AppState extends ChangeNotifier {
       itaxRecords: _itaxRecords,
       rules: _rules,
     );
+    _whvatMatches = ReconciliationEngine.reconcileWhvat(
+      whvatRecords: _whvatRecords,
+      invoiceRecords: [..._erpRecords, ..._etimsRecords],
+    );
+    _customsMatches = ReconciliationEngine.reconcileCustoms(
+      customsEntries: _customsEntries,
+      erpRecords: _erpRecords,
+    );
     notifyListeners();
   }
 
@@ -323,10 +429,16 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setMonthFilter(String month) {
+    _selectedMonthFilter = month;
+    notifyListeners();
+  }
+
   void resetFilters() {
     _searchQuery = '';
     _selectedStatusFilter = null;
     _selectedRiskFilter = null;
+    _selectedMonthFilter = 'All Months';
     notifyListeners();
   }
 
@@ -373,17 +485,17 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void exportITaxSectionBCsv() {
+  String? exportITaxSectionBCsv() {
     final csvContent = ITaxExportService.generateITaxSectionBCsv(
       client: _activeClient,
       taxPeriod: _selectedTaxPeriod,
       matches: _reconciliationResults,
     );
     final fileName = 'KRA_iTax_SectionB_InputVAT_${_activeClient.kraPin}_${_selectedTaxPeriod.replaceAll(' ', '_')}.csv';
-    ITaxExportService.downloadCsvWeb(csvData: csvContent, fileName: fileName);
+    return ITaxExportService.downloadCsvWeb(csvData: csvContent, fileName: fileName);
   }
 
-  void exportAuditLedgerExcel() {
+  String? exportAuditLedgerExcel() {
     final bytes = ExcelExportService.generateAuditLedgerExcel(
       client: _activeClient,
       taxPeriod: _selectedTaxPeriod,
@@ -391,9 +503,9 @@ class AppState extends ChangeNotifier {
     );
     if (bytes != null && bytes.isNotEmpty) {
       final fileName = 'Reconix_3Way_VAT_AuditLedger_${_activeClient.kraPin}_${_selectedTaxPeriod.replaceAll(' ', '_')}.xlsx';
-      final csvRepresentation = String.fromCharCodes(bytes);
-      ITaxExportService.downloadCsvWeb(csvData: csvRepresentation, fileName: fileName);
+      return ITaxExportService.downloadCsvWeb(csvData: bytes, fileName: fileName);
     }
+    return null;
   }
 
   void updateResolution({
@@ -416,6 +528,13 @@ class AppState extends ChangeNotifier {
   // Filtered getter for the view table
   List<ReconciliationMatch> get filteredMatches {
     return _reconciliationResults.where((m) {
+      // Month classification filter
+      if (_selectedMonthFilter != 'All Months') {
+        final invMonth = DateFormat('MMMM yyyy').format(m.invoiceDate);
+        if (invMonth != _selectedMonthFilter) {
+          return false;
+        }
+      }
       // Status filter
       if (_selectedStatusFilter != null && m.status != _selectedStatusFilter) {
         return false;
@@ -438,20 +557,22 @@ class AppState extends ChangeNotifier {
 
   // Summary KPI Getters
   double get totalInputVatClaimable {
+    if (!_rules.autoCalculate16PercentVat) return 0.0;
     return _reconciliationResults
-        .where((m) => m.status == MatchStatus.matched)
+        .where((m) => m.status == MatchStatus.matched || m.status == MatchStatus.timingLatency)
         .fold(0.0, (sum, m) => sum + m.primaryVat);
   }
 
   double get totalInputVatAtRisk {
+    if (!_rules.autoCalculate16PercentVat) return 0.0;
     return _reconciliationResults
-        .where((m) => m.status == MatchStatus.unclaimedInputVat || m.status == MatchStatus.vaaDisallowanceRisk)
+        .where((m) => m.status == MatchStatus.unclaimedInputVat || m.status == MatchStatus.vaaDisallowanceRisk || m.status == MatchStatus.amountRateVariance)
         .fold(0.0, (sum, m) => sum + m.claimableVatAtRisk);
   }
 
   double get total2026ExpenseDeductibilityRisk {
     return _reconciliationResults
-        .where((m) => m.status == MatchStatus.expenseValidationRisk2026 || m.status == MatchStatus.vaaDisallowanceRisk)
+        .where((m) => m.status == MatchStatus.expenseValidationRisk2026)
         .fold(0.0, (sum, m) => sum + m.incomeTaxDisallowanceRisk);
   }
 
@@ -474,7 +595,12 @@ class AppState extends ChangeNotifier {
   }
 
   int get unclaimedVatCount {
-    return _reconciliationResults.where((m) => m.status == MatchStatus.unclaimedInputVat).length;
+    if (!_rules.autoCalculate16PercentVat) return 0;
+    return _reconciliationResults.where((m) => m.status == MatchStatus.unclaimedInputVat || m.status == MatchStatus.vaaDisallowanceRisk || m.status == MatchStatus.amountRateVariance).length;
+  }
+
+  int get expenseRiskCount {
+    return _reconciliationResults.where((m) => m.status == MatchStatus.expenseValidationRisk2026).length;
   }
 
   ReconciliationCertificate generateCertificate() {

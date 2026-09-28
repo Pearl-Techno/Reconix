@@ -22,7 +22,7 @@ class ExcelExportService {
 
     // 1. SHEET 1: Executive Summary
     final Sheet summarySheet = excel['Executive Summary'];
-    summarySheet.appendRow([TextCellValue('RECONIX 3-WAY VAT AUDIT & VAA EXPOSURE REPORT')]);
+    summarySheet.appendRow([TextCellValue('RECONIX 3-WAY VAT AUDIT & VAA (VALUE ADDED AUTOMATED AUDIT) EXPOSURE REPORT')]);
     summarySheet.appendRow([TextCellValue('Taxpayer Name:'), TextCellValue(client.businessName)]);
     summarySheet.appendRow([TextCellValue('KRA PIN:'), TextCellValue(client.kraPin)]);
     summarySheet.appendRow([TextCellValue('Tax Period:'), TextCellValue(taxPeriod)]);
@@ -37,7 +37,7 @@ class ExcelExportService {
     summarySheet.appendRow([TextCellValue('COMPLIANCE KPI METRIC'), TextCellValue('VALUE')]);
     summarySheet.appendRow([TextCellValue('Total Audited Invoices'), IntCellValue(matches.length)]);
     summarySheet.appendRow([TextCellValue('Fully Matched 3-Way Invoices'), IntCellValue(totalMatched)]);
-    summarySheet.appendRow([TextCellValue('Critical VAA Penalty Risk Invoices'), IntCellValue(totalVaaRisk)]);
+    summarySheet.appendRow([TextCellValue('Critical VAA (Value Added Automated Audit) Penalty Risk Invoices'), IntCellValue(totalVaaRisk)]);
     summarySheet.appendRow([TextCellValue('Verified Safe Claimable Input VAT (KES)'), TextCellValue(currencyFormat.format(totalClaimableVat))]);
     summarySheet.appendRow([TextCellValue('Input VAT Exposure at Risk (KES)'), TextCellValue(currencyFormat.format(totalVatAtRisk))]);
 

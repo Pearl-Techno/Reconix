@@ -48,7 +48,7 @@ class _TaxExposureCalculatorViewState extends State<TaxExposureCalculatorView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    '2026 Corporate Income Tax & VAA Exposure Calculator',
+                    '2026 Corporate Income Tax & VAA (Value Added Automated Audit) Exposure Calculator',
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                   ),
                   const SizedBox(height: 4),
@@ -352,7 +352,7 @@ class _TaxExposureCalculatorViewState extends State<TaxExposureCalculatorView> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Sec. 84 VAA Disallowance Penalty (20%)', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                                  const Text('Sec. 84 VAA (Value Added Automated Audit) Disallowance Penalty (20%)', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
                                   const SizedBox(height: 4),
                                   Text('KES ${currencyFormat.format(sim.vaaDisallowancePenalty)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.crimsonRisk)),
                                 ],

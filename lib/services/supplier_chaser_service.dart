@@ -77,7 +77,7 @@ Generated via Reconix Tax Evidence Platform
     final rawWhatsapp = '⚠️ *URGENT TAX NOTICE - ${client.businessName}*\n\n'
         'Dear $supplierName (PIN: $supplierPin),\n'
         'Our monthly KRA VAT audit flagged missing eTIMS control codes for invoice(s): *$invoiceNumbers* (VAT at risk: KES ${totalVatAtRisk.toStringAsFixed(2)}).\n\n'
-        'Please send the valid eTIMS Control Code / QR URL to ${client.contactEmail} within 48 hours to prevent KRA VAA disallowance.\n\n'
+        'Please send the valid eTIMS Control Code / QR URL to ${client.contactEmail} within 48 hours to prevent KRA VAA (Value Added Automated Audit) disallowance.\n\n'
         'Thank you!';
 
     return SupplierChaserNotice(

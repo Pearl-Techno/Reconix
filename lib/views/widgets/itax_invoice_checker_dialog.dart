@@ -439,7 +439,7 @@ class _ItaxInvoiceCheckerDialogState extends State<ItaxInvoiceCheckerDialog> {
                                           const SizedBox(width: 10),
                                           Expanded(
                                             child: Text(
-                                              'No invoice found matching Control Unit Number "${_controlNoController.text}". Risk of KRA VAA Disallowance!',
+                                              'No invoice found matching Control Unit Number "${_controlNoController.text}". Risk of KRA VAA (Value Added Automated Audit) Disallowance!',
                                               style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold, fontSize: 12),
                                             ),
                                           ),

@@ -37,7 +37,7 @@ class _Vat7FilingChecklistDialogState extends State<Vat7FilingChecklistDialog> {
     'Execute 3-Way Match between ERP purchase ledger, eTIMS/TIMS server, and iTax schedule',
     'Reconcile Credit Notes (CN) and Debit Notes (DN) return adjustments',
     'Audit 2% Withholding VAT (WHVAT) certificates issued by withholding agents',
-    'Resolve VAA Disallowance Risk items & dispatch supplier Demand Notices',
+    'Resolve VAA (Value Added Automated Audit) Disallowance Risk items & dispatch supplier Demand Notices',
     'Verify Section 16(1) Corporate Income Tax 2026 expense deductibility rules',
     'Export KRA iTax Section B Input VAT CSV File',
     'Export Multi-Tab Excel (.xlsx) Audit Ledger Workbook for internal audit sign-off',

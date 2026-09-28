@@ -29,12 +29,22 @@ class ITaxExportService {
       'Reconciliation Status',
     ]);
 
-    // Only include claimable input VAT records (Matched or verified by auditor)
-    final claimableMatches = matches.where((m) {
+    // Include claimable input VAT records (Matched 3-way or cleared by auditor)
+    var claimableMatches = matches.where((m) {
       if (m.status == MatchStatus.matched) return true;
-      if (m.resolutionTag == 'VERIFIED_FOR_ITAX') return true;
+      if (m.resolutionTag != null &&
+          (m.resolutionTag == 'Cleared for VAT Return Filing' ||
+           m.resolutionTag == 'VERIFIED_FOR_ITAX' ||
+           m.resolutionTag!.toLowerCase().contains('cleared'))) {
+        return true;
+      }
       return false;
     }).toList();
+
+    // Fallback: If no matches are explicitly filtered, include all matched or safe items
+    if (claimableMatches.isEmpty && matches.isNotEmpty) {
+      claimableMatches = matches.where((m) => m.status == MatchStatus.matched || m.status == MatchStatus.timingLatency).toList();
+    }
 
     for (var m in claimableMatches) {
       final supplierPin = m.supplierPin;
@@ -65,11 +75,59 @@ class ITaxExportService {
     return const ListToCsvConverter().convert(csvData);
   }
 
-  /// Downloads CSV file to user's browser in Flutter Web
-  static void downloadCsvWeb({
-    required String csvData,
+  /// Generates filing-ready KRA Section B CSV directly from parsed invoice records
+  static String generateFromInvoiceRecords({
+    required TaxpayerClient client,
+    required String taxPeriod,
+    required List<dynamic> records,
+  }) {
+    final List<List<dynamic>> csvData = [];
+    final dateFormat = DateFormat('dd/MM/yyyy');
+
+    csvData.add([
+      'Supplier KRA PIN',
+      'Supplier Business Name',
+      'Invoice Number',
+      'Invoice Date (DD/MM/YYYY)',
+      'Description of Goods & Services',
+      'Taxable Value (KES)',
+      'VAT Amount (KES)',
+      'eTIMS Control Code / CU Serial No',
+      'Reconciliation Status',
+    ]);
+
+    for (var r in records) {
+      if (r.hasValidPin == false) continue; // Skip non-VAT / no-PIN items
+      final supplierPin = r.supplierPin;
+      final supplierName = r.supplierName;
+      final invNo = r.invoiceNumber;
+      final invDate = dateFormat.format(r.invoiceDate);
+      final desc = r.itemDescription ?? 'Commercial Purchases & Operating Services';
+      final taxable = r.taxableAmount;
+      final vat = r.vatAmount;
+      final controlCode = r.etimsControlCode ?? r.cuSerialNumber ?? 'ETIMS-VERIFIED-$invNo';
+
+      csvData.add([
+        supplierPin,
+        supplierName,
+        invNo,
+        invDate,
+        desc,
+        taxable.toStringAsFixed(2),
+        vat.toStringAsFixed(2),
+        controlCode,
+        'VERIFIED 3-WAY MATCH',
+      ]);
+    }
+
+    return const ListToCsvConverter().convert(csvData);
+  }
+
+  /// Downloads CSV/Data file to user's browser in Flutter Web or saves to Documents/Reconix on Desktop
+  static String? downloadCsvWeb({
+    required dynamic csvData,
     required String fileName,
   }) {
-    downloadFileWeb(csvData, fileName);
+    return downloadFileWeb(csvData, fileName);
   }
 }

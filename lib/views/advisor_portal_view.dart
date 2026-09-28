@@ -75,7 +75,7 @@ class AdvisorPortalView extends StatelessWidget {
               Expanded(
                 child: _portfolioCard(
                   context,
-                  title: 'Aggregate VAA Exposure Risk',
+                  title: 'Aggregate VAA (Value Added Automated Audit) Exposure Risk',
                   value: 'KES ${numberFormat.format(clients.fold(0.0, (sum, c) => sum + c.inputVatAtRisk))}',
                   subtitle: 'Requires immediate practitioner intervention',
                   icon: LucideIcons.alertTriangle,

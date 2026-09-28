@@ -142,7 +142,7 @@ class GettingStartedView extends StatelessWidget {
                 const Text(
                   'Reconix is built specifically for Kenyan corporate taxpayers, finance managers, and ICPAK certified advisors. '
                   'It automates 3-way matching between internal ERP ledgers, eTIMS & hardware TIMS ETR server databases, and KRA pre-filled iTax Section B schedules '
-                  'to eliminate VAA back-tax penalties under Section 16(2)(ac) and maximize legitimate input VAT claims.',
+                  'to eliminate VAA (Value Added Automated Audit) back-tax penalties under Section 16(2)(ac) and maximize legitimate input VAT claims.',
                   style: TextStyle(color: AppColors.textPrimary, fontSize: 14, height: 1.5),
                 ),
                 const SizedBox(height: 20),
@@ -153,7 +153,7 @@ class GettingStartedView extends StatelessWidget {
                   runSpacing: 8,
                   children: [
                     _featurePill(LucideIcons.gitCompare, 'Automated 3-Way Matching'),
-                    _featurePill(LucideIcons.shieldAlert, 'VAA Penalty Protection'),
+                    _featurePill(LucideIcons.shieldAlert, 'VAA (Value Added Automated Audit) Penalty Protection'),
                     _featurePill(LucideIcons.fileSpreadsheet, 'Section B CSV Exporter'),
                     _featurePill(LucideIcons.checkCircle2, 'Official iTax Verification'),
                     _featurePill(LucideIcons.lock, 'SHA-256 Signed Evidence Packs'),
@@ -246,7 +246,7 @@ class GettingStartedView extends StatelessWidget {
               'Perfect 3-Way Match: 100% safe to claim Section B Input VAT',
               'Timing Latency: Detects eTIMS/TIMS invoices delayed beyond month-end cutoff',
               'Unclaimed Input VAT: Uncovers missing internal ledger credits to claim extra KES refund',
-              'VAA Risk & 2026 Expense Risk: Identifies disallowance threats BEFORE filing return',
+              'VAA (Value Added Automated Audit) Risk & 2026 Expense Risk: Identifies disallowance threats BEFORE filing return',
             ],
             buttonText: 'Open Step 2: 3-Way VAT Matching Ledger',
             buttonIcon: LucideIcons.columns,
@@ -257,14 +257,14 @@ class GettingStartedView extends StatelessWidget {
           _buildStepCard(
             context,
             stepNumber: 3,
-            title: 'VAA Risk Resolution & Official iTax Verification',
+            title: 'VAA (Value Added Automated Audit) Risk Resolution & Official iTax Verification',
             badgeText: 'STEP 3: RESOLUTION & VERIFICATION',
             badgeColor: AppColors.warningOrange,
             icon: LucideIcons.shieldAlert,
             description:
                 'Audit high-risk exceptions, apply resolution tags, and verify suspicious control unit numbers live against KRA\'s official iTax verification database.',
             highlights: [
-              'Filter by Risk Level (VAA Exposure, Unclaimed VAT, Corporate Tax Risk)',
+              'Filter by Risk Level (VAA (Value Added Automated Audit) Exposure, Unclaimed VAT, Corporate Tax Risk)',
               'Apply bulk resolution tags (Request Vendor eTIMS Transmission, Disallow Claim)',
               'Embedded KRA iTax Invoice Checker styled after official KRA portal interface',
             ],

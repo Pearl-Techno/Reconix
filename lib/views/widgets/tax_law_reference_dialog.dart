@@ -65,12 +65,12 @@ class _TaxLawReferenceDialogState extends State<TaxLawReferenceDialog> {
     TaxLawCitation(
       actName: 'VAT Act 2013',
       sectionNumber: 'Section 42 & Sec 16(2)',
-      title: 'VAA Automated Assessment & Penalty Provisions',
+      title: 'VAA (Value Added Automated Audit) Assessment & Penalty Provisions',
       verbatimExcerpt:
-          'Where a discrepancy exists between input tax claimed by a purchaser and output tax declared by a seller in Section B schedules (VAT Automated Audit - VAA), the Commissioner shall issue a disallowance notice. Unresolved VAA discrepancies shall attract a 100% tax penalty and 1% monthly compounding interest.',
+          'Where a discrepancy exists between input tax claimed by a purchaser and output tax declared by a seller in Section B schedules (VAA - Value Added Automated Audit), the Commissioner shall issue a disallowance notice. Unresolved VAA (Value Added Automated Audit) discrepancies shall attract a 100% tax penalty and 1% monthly compounding interest.',
       practicalImpact:
-          'Discrepancies lead to immediate automated VAA demand notices. Pre-filing 3-way reconciliation in Reconix blocks VAA notices before submission.',
-      keyRequirement: 'Automated 100% VAA Disallowance Penalty & Interest Protection',
+          'Discrepancies lead to immediate automated VAA (Value Added Automated Audit) demand notices. Pre-filing 3-way reconciliation in Reconix blocks VAA (Value Added Automated Audit) notices before submission.',
+      keyRequirement: 'Automated 100% VAA (Value Added Automated Audit) Disallowance Penalty & Interest Protection',
     ),
   ];
 
@@ -122,7 +122,7 @@ class _TaxLawReferenceDialogState extends State<TaxLawReferenceDialog> {
                         ),
                         SizedBox(height: 2),
                         Text(
-                          'Statutory provisions governing Input VAT, eTIMS compliance & VAA audit defense',
+                          'Statutory provisions governing Input VAT, eTIMS compliance & VAA (Value Added Automated Audit) audit defense',
                           style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                         ),
                       ],

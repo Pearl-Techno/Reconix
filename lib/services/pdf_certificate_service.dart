@@ -136,7 +136,7 @@ class PdfCertificateService {
                 ['3-Way Fully Matched (Cleared to File)', '${cert.fullyMatchedCount} Invoices', 'KES ${numberFormat.format(cert.totalInputVatClaimable)} (Claimable VAT)'],
                 ['Systemic Timing Latency (Batch Delay)', '${cert.timingLatencyCount} Invoices', 'Pending iTax Auto-Populate'],
                 ['Unclaimed Input VAT Risk (Omitted in iTax)', '${cert.unclaimedInputVatCount} Invoices', 'KES ${numberFormat.format(cert.totalInputVatDisallowedExposure)} (At Risk)'],
-                ['VAA Penalty & 2026 Expense Risk', '${cert.vaaDisallowanceCount + cert.expenseValidationRiskCount} Invoices', 'KES ${numberFormat.format(cert.total2026ExpenseDeductibilityRisk)} (Deduction Exposure)'],
+                ['VAA (Value Added Automated Audit) Penalty & 2026 Expense Risk', '${cert.vaaDisallowanceCount + cert.expenseValidationRiskCount} Invoices', 'KES ${numberFormat.format(cert.total2026ExpenseDeductibilityRisk)} (Deduction Exposure)'],
                 ['Section 16(1) 30% Corp Tax Risk', 'Tax Laws Amendment 2026', 'KES ${numberFormat.format(cert.total2026ExpenseDeductibilityRisk * 0.30)} (Income Tax Liability)'],
               ],
               headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 9),
@@ -147,7 +147,7 @@ class PdfCertificateService {
             pw.SizedBox(height: 20),
 
             // Variance & Exception Schedule Table
-            pw.Text('2. Variance & Exception Schedule (KRA VAA Audit Evidence)',
+            pw.Text('2. Variance & Exception Schedule (KRA VAA (Value Added Automated Audit) Audit Evidence)',
                 style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: primaryColor)),
             pw.SizedBox(height: 8),
 

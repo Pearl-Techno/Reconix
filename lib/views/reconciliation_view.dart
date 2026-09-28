@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
-import '../providers/app_state.dart';
+import '../models/invoice_record.dart';
 import '../models/reconciliation_match.dart';
+import '../models/reconciliation_rules.dart';
+import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
 import 'widgets/invoice_detail_dialog.dart';
 
@@ -46,7 +48,19 @@ class ReconciliationView extends StatelessWidget {
                     ),
                     icon: const Icon(LucideIcons.download, size: 16),
                     label: const Text('Export iTax Section B CSV'),
-                    onPressed: () => state.exportITaxSectionBCsv(),
+                    onPressed: () {
+                      final savedPath = state.exportITaxSectionBCsv();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            savedPath != null
+                                ? 'Exported & saved to $savedPath'
+                                : 'Exported claimable records to KRA iTax Section B CSV format!',
+                          ),
+                          backgroundColor: AppColors.emeraldPrimary,
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(width: 8),
                   OutlinedButton.icon(
@@ -57,10 +71,14 @@ class ReconciliationView extends StatelessWidget {
                     icon: const Icon(LucideIcons.fileSpreadsheet, size: 16),
                     label: const Text('Export Audit Ledger Excel (.xlsx)'),
                     onPressed: () {
-                      state.exportAuditLedgerExcel();
+                      final savedPath = state.exportAuditLedgerExcel();
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Multi-tab Excel (.xlsx) Audit Ledger exported!'),
+                        SnackBar(
+                          content: Text(
+                            savedPath != null
+                                ? 'Saved Excel Audit Ledger to $savedPath'
+                                : 'Multi-tab Excel (.xlsx) Audit Ledger exported!',
+                          ),
                           backgroundColor: AppColors.emeraldPrimary,
                         ),
                       );
@@ -157,6 +175,52 @@ class ReconciliationView extends StatelessWidget {
               ),
             ),
 
+          // Mode Selector Bar (4 Reconciliation Modes)
+          Card(
+            color: AppColors.darkCard,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  const Icon(LucideIcons.gitCompare, color: AppColors.mintAccent, size: 18),
+                  const SizedBox(width: 8),
+                  const Text('Reconciliation Mode: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: ReconciliationMode.values.map((mode) {
+                          final isSelected = state.reconciliationMode == mode;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ChoiceChip(
+                              label: Text(
+                                mode.shortName,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: isSelected ? Colors.black : Colors.white,
+                                ),
+                              ),
+                              selected: isSelected,
+                              selectedColor: AppColors.mintAccent,
+                              backgroundColor: AppColors.darkBg,
+                              onSelected: (_) {
+                                state.setReconciliationMode(mode);
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
           // Search & Filter Toolbar
           Card(
             child: Padding(
@@ -180,15 +244,138 @@ class ReconciliationView extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 16),
+                      // Optional Tax Category Column Toggle
+                      FilterChip(
+                        avatar: Icon(
+                          state.rules.showTaxCategoryColumn ? LucideIcons.checkSquare : LucideIcons.square,
+                          size: 14,
+                          color: state.rules.showTaxCategoryColumn ? AppColors.mintAccent : AppColors.textMuted,
+                        ),
+                        label: Text(
+                          'Show Tax Category Column',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: state.rules.showTaxCategoryColumn ? AppColors.mintAccent : AppColors.textSecondary,
+                          ),
+                        ),
+                        selected: state.rules.showTaxCategoryColumn,
+                        selectedColor: AppColors.mintAccent.withValues(alpha: 0.15),
+                        backgroundColor: AppColors.darkBg,
+                        onSelected: (_) => state.toggleTaxCategoryColumn(),
+                      ),
+                      const SizedBox(width: 8),
+                      // Optional Claimable VAT Column Toggle
+                      FilterChip(
+                        avatar: Icon(
+                          state.rules.showClaimableVatColumn ? LucideIcons.checkSquare : LucideIcons.square,
+                          size: 14,
+                          color: state.rules.showClaimableVatColumn ? AppColors.mintAccent : AppColors.textMuted,
+                        ),
+                        label: Text(
+                          'Show Claimable VAT Column',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: state.rules.showClaimableVatColumn ? AppColors.mintAccent : AppColors.textSecondary,
+                          ),
+                        ),
+                        selected: state.rules.showClaimableVatColumn,
+                        selectedColor: AppColors.mintAccent.withValues(alpha: 0.15),
+                        backgroundColor: AppColors.darkBg,
+                        onSelected: (_) => state.toggleClaimableVatColumn(),
+                      ),
+                      const SizedBox(width: 8),
+                      // Optional 16% VAT Auto-Calc Toggle
+                      FilterChip(
+                        avatar: Icon(
+                          state.rules.autoCalculate16PercentVat ? LucideIcons.calculator : LucideIcons.fileText,
+                          size: 14,
+                          color: state.rules.autoCalculate16PercentVat ? AppColors.kraGold : AppColors.textMuted,
+                        ),
+                        label: Text(
+                          state.rules.autoCalculate16PercentVat ? '16% Vatable Mode: ON' : '16% Vatable Mode: OFF (Default)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: state.rules.autoCalculate16PercentVat ? AppColors.kraGold : AppColors.textSecondary,
+                          ),
+                        ),
+                        selected: state.rules.autoCalculate16PercentVat,
+                        selectedColor: AppColors.kraGold.withValues(alpha: 0.15),
+                        backgroundColor: AppColors.darkBg,
+                        onSelected: (_) => state.toggleAutoCalculate16PercentVat(),
+                      ),
+                      const SizedBox(width: 16),
                       // Reset Filters Button
                       OutlinedButton.icon(
                         icon: const Icon(LucideIcons.filterX, size: 16),
                         label: const Text('Clear Filters'),
                         onPressed: () => state.resetFilters(),
                       ),
+                      if (state.itaxRecords.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.crimsonRisk,
+                            side: BorderSide(color: AppColors.crimsonRisk.withValues(alpha: 0.5)),
+                          ),
+                          icon: const Icon(LucideIcons.trash2, size: 14),
+                          label: Text('Remove iTax Data (${state.itaxRecords.length})'),
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (dialogCtx) => AlertDialog(
+                                title: const Text('Remove iTax Records?'),
+                                content: Text('Are you sure you want to remove all ${state.itaxRecords.length} ingested iTax schedule records? This will clear the dataset so you can re-upload a fresh iTax file.'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
+                                  ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.crimsonRisk, foregroundColor: Colors.white),
+                                    icon: const Icon(LucideIcons.trash2, size: 16),
+                                    label: const Text('Clear iTax Dataset'),
+                                    onPressed: () async {
+                                      Navigator.pop(dialogCtx);
+                                      await state.clearSourceDataset(SourceType.itax);
+                                      if (!context.mounted) return;
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('iTax dataset cleared successfully. You can now re-upload.'),
+                                          backgroundColor: AppColors.emeraldPrimary,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 12),
+
+                  // Month Classification Chips Row
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        const Text('Tax Month: ', style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.bold)),
+                        ...state.availableMonths.map((month) {
+                          final isSelected = state.selectedMonthFilter == month;
+                          return _filterChip(
+                            context,
+                            label: month,
+                            isSelected: isSelected,
+                            color: AppColors.kraGold,
+                            onSelected: () => state.setMonthFilter(month),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
 
                   // Match Status Chips Row
                   SingleChildScrollView(
@@ -225,7 +412,7 @@ class ReconciliationView extends StatelessWidget {
                         ),
                         _filterChip(
                           context,
-                          label: 'VAA Risk (${state.vaaRiskCount})',
+                          label: 'VAA (Value Added Automated Audit) Risk (${state.vaaRiskCount})',
                           isSelected: state.selectedStatusFilter == MatchStatus.vaaDisallowanceRisk,
                           color: AppColors.crimsonRisk,
                           onSelected: () => state.setStatusFilter(MatchStatus.vaaDisallowanceRisk),
@@ -246,36 +433,55 @@ class ReconciliationView extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // Main 3-Way Comparative Grid Table
+          // Main Comparative Grid Table
           Expanded(
             child: Card(
               child: matches.isEmpty
                   ? const Center(
-                      child: Text('No invoice matches found matching active search filters.'),
+                      child: Text('No invoice matches found matching active search & period filters.'),
                     )
                   : SingleChildScrollView(
                       scrollDirection: Axis.vertical,
                       child: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: SizedBox(
-                          width: MediaQuery.of(context).size.width > 1200 ? MediaQuery.of(context).size.width - 280 : 1200,
+                          width: MediaQuery.of(context).size.width > 1400 ? MediaQuery.of(context).size.width - 280 : 1400,
                           child: PaginatedDataTable(
                             rowsPerPage: matches.length > 50 ? 50 : (matches.isEmpty ? 1 : matches.length),
                             availableRowsPerPage: const [10, 25, 50, 100, 250],
-                            columnSpacing: 20,
+                            columnSpacing: 16,
                             horizontalMargin: 16,
                             headingRowColor: WidgetStateProperty.all(AppColors.darkBg),
-                            columns: const [
-                              DataColumn(label: Text('ID & Risk', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('Invoice # & Date', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('Supplier Name & PIN', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('3-Way Source Status', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('ERP Total (KES)', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('eTIMS/TIMS Total (KES)', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('iTax Total (KES)', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('Claimable VAT', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('Auditor Tag', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold))),
+                            columns: [
+                              const DataColumn(label: Text('ID & Risk', style: TextStyle(fontWeight: FontWeight.bold))),
+                              const DataColumn(label: Text('Invoice #', style: TextStyle(fontWeight: FontWeight.bold))),
+                              const DataColumn(label: Text('Invoice Date', style: TextStyle(fontWeight: FontWeight.bold))),
+                              const DataColumn(label: Text('Supplier Name & PIN', style: TextStyle(fontWeight: FontWeight.bold))),
+                              if (state.rules.showTaxCategoryColumn)
+                                const DataColumn(label: Text('Tax Category', style: TextStyle(fontWeight: FontWeight.bold))),
+                              const DataColumn(label: Text('Recon Status', style: TextStyle(fontWeight: FontWeight.bold))),
+                              if (state.reconciliationMode == ReconciliationMode.twoWayErpItax) ...[
+                                const DataColumn(label: Text('ERP Total (KES)', style: TextStyle(fontWeight: FontWeight.bold))),
+                                const DataColumn(label: Text('iTax Total (KES)', style: TextStyle(fontWeight: FontWeight.bold))),
+                                const DataColumn(label: Text('ERP vs iTax Variance (KES)', style: TextStyle(fontWeight: FontWeight.bold))),
+                              ] else if (state.reconciliationMode == ReconciliationMode.twoWayEtimsItax) ...[
+                                const DataColumn(label: Text('eTIMS Total (KES)', style: TextStyle(fontWeight: FontWeight.bold))),
+                                const DataColumn(label: Text('iTax Total (KES)', style: TextStyle(fontWeight: FontWeight.bold))),
+                                const DataColumn(label: Text('Variance (KES)', style: TextStyle(fontWeight: FontWeight.bold))),
+                              ] else if (state.reconciliationMode == ReconciliationMode.twoWayErpEtims) ...[
+                                const DataColumn(label: Text('ERP Total (KES)', style: TextStyle(fontWeight: FontWeight.bold))),
+                                const DataColumn(label: Text('eTIMS Total (KES)', style: TextStyle(fontWeight: FontWeight.bold))),
+                                const DataColumn(label: Text('Variance (KES)', style: TextStyle(fontWeight: FontWeight.bold))),
+                              ] else ...[
+                                const DataColumn(label: Text('ERP Total (KES)', style: TextStyle(fontWeight: FontWeight.bold))),
+                                const DataColumn(label: Text('eTIMS Total (KES)', style: TextStyle(fontWeight: FontWeight.bold))),
+                                const DataColumn(label: Text('iTax Total (KES)', style: TextStyle(fontWeight: FontWeight.bold))),
+                                const DataColumn(label: Text('ERP vs iTax Variance (KES)', style: TextStyle(fontWeight: FontWeight.bold))),
+                              ],
+                              if (state.rules.showClaimableVatColumn)
+                                const DataColumn(label: Text('Claimable VAT', style: TextStyle(fontWeight: FontWeight.bold))),
+                              const DataColumn(label: Text('Auditor Tag', style: TextStyle(fontWeight: FontWeight.bold))),
+                              const DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold))),
                             ],
                             source: ReconciliationDataTableSource(
                               matches: matches,
@@ -359,17 +565,10 @@ class ReconciliationDataTableSource extends DataTableSource {
             ],
           ),
         ),
-        // Invoice # & Date
-        DataCell(
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(m.invoiceNumber, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textPrimary)),
-              Text(dateFormat.format(m.invoiceDate), style: const TextStyle(color: AppColors.textMuted, fontSize: 10)),
-            ],
-          ),
-        ),
+        // Invoice #
+        DataCell(Text(m.invoiceNumber, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textPrimary))),
+        // Invoice Date (Dedicated Column)
+        DataCell(Text(dateFormat.format(m.invoiceDate), style: const TextStyle(fontSize: 12, color: AppColors.textPrimary))),
         // Supplier Name & PIN
         DataCell(
           Column(
@@ -381,7 +580,33 @@ class ReconciliationDataTableSource extends DataTableSource {
             ],
           ),
         ),
-        // 3-Way Source Badges
+        // Tax Category Badge (Optional Column)
+        if (state.rules.showTaxCategoryColumn)
+          DataCell(
+            Builder(
+              builder: (context) {
+                final rec = m.erpRecord ?? m.etimsRecord ?? m.itaxRecord;
+                final tc = rec?.effectiveTaxClassification ?? TaxClassification.standard16;
+                final col = tc == TaxClassification.zeroRated
+                    ? AppColors.infoBlue
+                    : (tc == TaxClassification.exempt ? AppColors.kraGold : AppColors.mintAccent);
+
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: col.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: col, width: 0.5),
+                  ),
+                  child: Text(
+                    tc.displayName,
+                    style: TextStyle(color: col, fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
+                );
+              },
+            ),
+          ),
+        // Recon Source Status Badges
         DataCell(
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,20 +630,86 @@ class ReconciliationDataTableSource extends DataTableSource {
             ],
           ),
         ),
-        // Amounts
-        DataCell(Text(m.erpRecord != null ? numberFormat.format(m.erpRecord!.totalAmount) : '—', style: const TextStyle(fontSize: 12))),
-        DataCell(Text(m.etimsRecord != null ? numberFormat.format(m.etimsRecord!.totalAmount) : '—', style: const TextStyle(fontSize: 12))),
-        DataCell(Text(m.itaxRecord != null ? numberFormat.format(m.itaxRecord!.totalAmount) : '—', style: const TextStyle(fontSize: 12))),
-        DataCell(
-          Text(
-            'KES ${numberFormat.format(m.primaryVat)}',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: m.status == MatchStatus.matched ? AppColors.mintAccent : AppColors.warningOrange,
+        // Mode-Specific Amounts & Variances
+        if (state.reconciliationMode == ReconciliationMode.twoWayErpItax) ...[
+          DataCell(Text(m.erpRecord != null ? numberFormat.format(m.erpRecord!.totalAmount) : '—', style: const TextStyle(fontSize: 12))),
+          DataCell(Text(m.itaxRecord != null ? numberFormat.format(m.itaxRecord!.totalAmount) : '—', style: const TextStyle(fontSize: 12))),
+          DataCell(
+            Text(
+              'KES ${numberFormat.format(m.erpItaxVariance)}',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: m.erpItaxVariance > 0 ? AppColors.warningOrange : AppColors.mintAccent,
+              ),
             ),
           ),
-        ),
+        ] else if (state.reconciliationMode == ReconciliationMode.twoWayEtimsItax) ...[
+          DataCell(Text(m.etimsRecord != null ? numberFormat.format(m.etimsRecord!.totalAmount) : '—', style: const TextStyle(fontSize: 12))),
+          DataCell(Text(m.itaxRecord != null ? numberFormat.format(m.itaxRecord!.totalAmount) : '—', style: const TextStyle(fontSize: 12))),
+          DataCell(
+            Text(
+              'KES ${numberFormat.format(m.totalVariance)}',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: m.totalVariance > 0 ? AppColors.warningOrange : AppColors.mintAccent,
+              ),
+            ),
+          ),
+        ] else if (state.reconciliationMode == ReconciliationMode.twoWayErpEtims) ...[
+          DataCell(Text(m.erpRecord != null ? numberFormat.format(m.erpRecord!.totalAmount) : '—', style: const TextStyle(fontSize: 12))),
+          DataCell(Text(m.etimsRecord != null ? numberFormat.format(m.etimsRecord!.totalAmount) : '—', style: const TextStyle(fontSize: 12))),
+          DataCell(
+            Text(
+              'KES ${numberFormat.format(m.totalVariance)}',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: m.totalVariance > 0 ? AppColors.warningOrange : AppColors.mintAccent,
+              ),
+            ),
+          ),
+        ] else ...[
+          DataCell(Text(m.erpRecord != null ? numberFormat.format(m.erpRecord!.totalAmount) : '—', style: const TextStyle(fontSize: 12))),
+          DataCell(Text(m.etimsRecord != null ? numberFormat.format(m.etimsRecord!.totalAmount) : '—', style: const TextStyle(fontSize: 12))),
+          DataCell(Text(m.itaxRecord != null ? numberFormat.format(m.itaxRecord!.totalAmount) : '—', style: const TextStyle(fontSize: 12))),
+          DataCell(
+            Text(
+              'KES ${numberFormat.format(m.erpItaxVariance)}',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: m.erpItaxVariance > 0 ? AppColors.warningOrange : AppColors.mintAccent,
+              ),
+            ),
+          ),
+        ],
+        if (state.rules.showClaimableVatColumn)
+          DataCell(
+            Builder(
+              builder: (context) {
+                if (!state.rules.autoCalculate16PercentVat) {
+                  return const Text('KES 0.00', style: TextStyle(fontSize: 12, color: AppColors.textMuted));
+                }
+                final rec = m.erpRecord ?? m.etimsRecord ?? m.itaxRecord;
+                final tc = rec?.effectiveTaxClassification;
+                final isVatable = tc == TaxClassification.standard16 || tc == TaxClassification.eightPercent;
+                final claimable = (isVatable && m.primaryVat > 0) ? m.primaryVat : 0.0;
+
+                return Text(
+                  'KES ${numberFormat.format(claimable)}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: claimable > 0
+                        ? (m.status == MatchStatus.matched ? AppColors.mintAccent : AppColors.warningOrange)
+                        : AppColors.textMuted,
+                  ),
+                );
+              },
+            ),
+          ),
         // Auditor Tag
         DataCell(
           m.resolutionTag != null

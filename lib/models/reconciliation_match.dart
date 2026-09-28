@@ -175,6 +175,18 @@ class ReconciliationMatch {
         0.0;
   }
 
+  /// Variance between internal ERP total amount and iTax return schedule total amount
+  double get erpItaxVariance {
+    if (erpRecord != null && itaxRecord != null) {
+      return (erpRecord!.totalAmount - itaxRecord!.totalAmount).abs();
+    } else if (erpRecord != null) {
+      return erpRecord!.totalAmount;
+    } else if (itaxRecord != null) {
+      return itaxRecord!.totalAmount;
+    }
+    return totalVariance;
+  }
+
   ReconciliationMatch copyWith({
     String? userNote,
     String? resolutionTag,

@@ -9,18 +9,21 @@ import 'getting_started_view.dart';
 import 'dashboard_view.dart';
 import 'reconciliation_view.dart';
 import 'whvat_reconciliation_view.dart';
+import 'customs_reconciliation_view.dart';
 import 'historical_trend_view.dart';
 import 'ingestion_view.dart';
 import 'evidence_pack_view.dart';
 import 'advisor_portal_view.dart';
 import 'supplier_risk_view.dart';
 import 'tax_exposure_calculator_view.dart';
+import 'audit_trail_view.dart';
 import 'settings_view.dart';
 import 'widgets/add_company_dialog.dart';
 import 'widgets/itax_invoice_checker_dialog.dart';
 import 'widgets/tax_law_reference_dialog.dart';
 import 'widgets/itax_filing_bundle_dialog.dart';
 import 'widgets/license_activation_dialog.dart';
+import 'widgets/vat_apportionment_dialog.dart';
 
 class MainLayout extends StatelessWidget {
   const MainLayout({super.key});
@@ -44,12 +47,14 @@ class MainLayout extends StatelessWidget {
       const DashboardView(),
       const ReconciliationView(),
       const WhvatReconciliationView(),
+      const CustomsReconciliationView(),
       const HistoricalTrendView(),
       const IngestionView(),
       SupplierRiskView(matches: state.reconciliationResults),
       const TaxExposureCalculatorView(),
       const EvidencePackView(),
       const AdvisorPortalView(),
+      const AuditTrailView(),
       SettingsView(
         currentRules: state.rules,
         onRulesSaved: (newRules) => state.updateRules(newRules),
@@ -255,6 +260,15 @@ class MainLayout extends StatelessWidget {
                       _navItem(
                         context,
                         index: 4,
+                        title: 'Import Customs (Sec F)',
+                        icon: LucideIcons.ship,
+                        activeTab: state.activeTab,
+                        badge: '${state.customsEntries.length}',
+                        badgeColor: AppColors.mintAccent,
+                      ),
+                      _navItem(
+                        context,
+                        index: 5,
                         title: 'Multi-Period Analytics',
                         icon: LucideIcons.barChart2,
                         activeTab: state.activeTab,
@@ -263,14 +277,14 @@ class MainLayout extends StatelessWidget {
                       ),
                       _navItem(
                         context,
-                        index: 5,
+                        index: 6,
                         title: 'Data Ingestion Hub',
                         icon: LucideIcons.uploadCloud,
                         activeTab: state.activeTab,
                       ),
                       _navItem(
                         context,
-                        index: 6,
+                        index: 7,
                         title: 'Supplier Risk Hub',
                         icon: LucideIcons.shieldAlert,
                         activeTab: state.activeTab,
@@ -279,14 +293,14 @@ class MainLayout extends StatelessWidget {
                       ),
                       _navItem(
                         context,
-                        index: 7,
+                        index: 8,
                         title: 'CIT 30% Tax Exposure',
                         icon: LucideIcons.calculator,
                         activeTab: state.activeTab,
                       ),
                       _navItem(
                         context,
-                        index: 8,
+                        index: 9,
                         title: 'Audit Evidence Packs',
                         icon: LucideIcons.fileCheck2,
                         activeTab: state.activeTab,
@@ -295,7 +309,7 @@ class MainLayout extends StatelessWidget {
                       ),
                       _navItem(
                         context,
-                        index: 9,
+                        index: 10,
                         title: 'Advisor Multi-Client',
                         icon: LucideIcons.users,
                         activeTab: state.activeTab,
@@ -304,7 +318,16 @@ class MainLayout extends StatelessWidget {
                       ),
                       _navItem(
                         context,
-                        index: 10,
+                        index: 11,
+                        title: 'System Audit Trail',
+                        icon: LucideIcons.history,
+                        activeTab: state.activeTab,
+                        badge: '${state.auditLogs.length}',
+                        badgeColor: AppColors.mintAccent,
+                      ),
+                      _navItem(
+                        context,
+                        index: 12,
                         title: 'Rules & Settings',
                         icon: LucideIcons.settings,
                         activeTab: state.activeTab,
@@ -516,6 +539,19 @@ class MainLayout extends StatelessWidget {
                               const SizedBox(width: 8),
                               OutlinedButton.icon(
                                 style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.kraGold,
+                                  side: const BorderSide(color: AppColors.kraGold),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                                icon: const Icon(LucideIcons.pieChart, size: 14),
+                                label: const Text('Sec 17 Apportionment', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                onPressed: () {
+                                  VatApportionmentDialog.show(context);
+                                },
+                              ),
+                              const SizedBox(width: 8),
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
                                   foregroundColor: AppColors.mintAccent,
                                   side: const BorderSide(color: AppColors.mintAccent),
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -688,15 +724,20 @@ class MainLayout extends StatelessWidget {
                   ),
                 ),
                 if (badge != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: badgeColor.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      badge,
-                      style: TextStyle(color: badgeColor, fontSize: 10, fontWeight: FontWeight.bold),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 80),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: badgeColor.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        badge,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: TextStyle(color: badgeColor, fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
               ],

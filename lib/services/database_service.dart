@@ -19,13 +19,14 @@ class DatabaseService {
   }
 
   static Future<Database> _initDatabase() async {
+    Database dbInstance;
     if (kIsWeb) {
       // In Web, initialize FFI in-memory database
       sqfliteFfiInit();
       databaseFactory = databaseFactoryFfi;
-      return await openDatabase(
+      dbInstance = await openDatabase(
         inMemoryDatabasePath,
-        version: 5,
+        version: 6,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -39,12 +40,96 @@ class DatabaseService {
       final dbPath = await getDatabasesPath();
       final path = p.join(dbPath, 'reconix.db');
 
-      return await openDatabase(
+      dbInstance = await openDatabase(
         path,
-        version: 5,
+        version: 6,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
+    }
+    await _ensureAllTablesExist(dbInstance);
+    return dbInstance;
+  }
+
+  static Future<void> _ensureAllTablesExist(Database db) async {
+    try {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS audit_logs (
+          id TEXT PRIMARY KEY,
+          user_id TEXT,
+          user_name TEXT,
+          user_role TEXT,
+          action TEXT,
+          target_invoice_key TEXT,
+          timestamp TEXT,
+          details TEXT
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS tax_period_locks (
+          client_id TEXT,
+          tax_period TEXT,
+          is_locked INTEGER,
+          locked_by_user TEXT,
+          locked_at TEXT,
+          PRIMARY KEY (client_id, tax_period)
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS whvat_records (
+          id TEXT PRIMARY KEY,
+          certificate_number TEXT,
+          supplier_pin TEXT,
+          supplier_name TEXT,
+          buyer_pin TEXT,
+          buyer_name TEXT,
+          certificate_date TEXT,
+          tax_period TEXT,
+          gross_invoice_amount REAL,
+          whvat_amount REAL,
+          invoice_number TEXT,
+          is_claimed_on_itax INTEGER,
+          is_demo INTEGER
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS customs_records (
+          id TEXT PRIMARY KEY,
+          entry_number TEXT,
+          customs_station TEXT,
+          importer_pin TEXT,
+          importer_name TEXT,
+          declaration_date TEXT,
+          tax_period TEXT,
+          taxable_value REAL,
+          import_vat_amount REAL,
+          hs_code TEXT,
+          is_matched_with_erp INTEGER,
+          is_demo INTEGER
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS reconciliation_resolutions (
+          match_id TEXT PRIMARY KEY,
+          resolution_tag TEXT,
+          user_note TEXT,
+          is_resolved INTEGER,
+          resolved_at TEXT
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS app_settings (
+          key TEXT PRIMARY KEY,
+          value TEXT
+        )
+      ''');
+    } catch (e) {
+      debugPrint('Error ensuring database tables exist: $e');
     }
   }
 
@@ -102,6 +187,22 @@ class DatabaseService {
             locked_by_user TEXT,
             locked_at TEXT,
             PRIMARY KEY (client_id, tax_period)
+          )
+        ''');
+      } catch (_) {}
+    }
+    if (oldVersion < 6) {
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS audit_logs (
+            id TEXT PRIMARY KEY,
+            user_id TEXT,
+            user_name TEXT,
+            user_role TEXT,
+            action TEXT,
+            target_invoice_key TEXT,
+            timestamp TEXT,
+            details TEXT
           )
         ''');
       } catch (_) {}
@@ -353,6 +454,19 @@ class DatabaseService {
         cuSerialNumber: map['cu_serial_number'] as String?,
       );
     }).toList();
+  }
+
+  static Future<void> deleteInvoicesBySource({
+    required String clientId,
+    required SourceType sourceType,
+    required bool isDemo,
+  }) async {
+    final db = await database;
+    await db.delete(
+      'invoices',
+      where: 'client_id = ? AND source_type = ? AND is_demo = ?',
+      whereArgs: [clientId, sourceType.name, isDemo ? 1 : 0],
+    );
   }
 
   static Future<void> clearLiveDatabase() async {

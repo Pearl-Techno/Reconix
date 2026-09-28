@@ -4,6 +4,54 @@ enum SourceType {
   itax,
 }
 
+enum TaxClassification {
+  standard16,
+  eightPercent,
+  zeroRated,
+  exempt,
+}
+
+extension TaxClassificationExtension on TaxClassification {
+  String get displayName {
+    switch (this) {
+      case TaxClassification.standard16:
+        return 'Standard (16%) [Cat A]';
+      case TaxClassification.eightPercent:
+        return 'Fuel (8%) [Cat D]';
+      case TaxClassification.zeroRated:
+        return 'Zero-Rated (0%) [Cat B]';
+      case TaxClassification.exempt:
+        return 'Exempt [Cat C]';
+    }
+  }
+
+  String get kraCategoryCode {
+    switch (this) {
+      case TaxClassification.standard16:
+        return 'A';
+      case TaxClassification.zeroRated:
+        return 'B';
+      case TaxClassification.exempt:
+        return 'C';
+      case TaxClassification.eightPercent:
+        return 'D';
+    }
+  }
+
+  String get statutoryExplanation {
+    switch (this) {
+      case TaxClassification.standard16:
+        return 'Taxable supply at standard 16% VAT rate (Category A). Full input VAT claimable subject to valid eTIMS invoice/QR verification.';
+      case TaxClassification.eightPercent:
+        return 'Taxable supply at 8% VAT rate (Category D - Fuel/Petroleum products). Input VAT claimable up to 8% rate.';
+      case TaxClassification.zeroRated:
+        return 'Zero-rated supply at 0% VAT rate (Category B - Second Schedule). Exports, EPZ sales, diplomatic goods. Input VAT on related purchases CAN be claimed.';
+      case TaxClassification.exempt:
+        return 'Exempt supply (Category C - First Schedule). Financial services, medical items, education, land. Input VAT CANNOT be claimed on related expenses.';
+    }
+  }
+}
+
 extension SourceTypeExtension on SourceType {
   String get displayName {
     switch (this) {
@@ -74,6 +122,7 @@ class InvoiceRecord {
   final SourceType sourceType;
   final InvoiceType invoiceType;
   final SectionType sectionType;
+  final TaxClassification? taxClassification;
   final String? itemDescription;
   final String? costCenter;
   final String? traderSystemInvoiceNumber;
@@ -97,7 +146,8 @@ class InvoiceRecord {
     this.vatRate = 0.16,
     required this.sourceType,
     this.invoiceType = InvoiceType.standard,
-    this.sectionType = SectionType.sectionBPurchases,
+    this.sectionType = SectionType.sectionASales,
+    this.taxClassification,
     this.itemDescription,
     this.costCenter,
     this.traderSystemInvoiceNumber,
@@ -142,6 +192,32 @@ class InvoiceRecord {
   /// Signed total amount (negative for credit notes)
   double get signedTotalAmount => invoiceType == InvoiceType.creditNote ? -totalAmount.abs() : totalAmount.abs();
 
+  /// Statutory KRA tax classification (Standard 16%, Fuel 8%, Zero-Rated 0%, Exempt)
+  TaxClassification get effectiveTaxClassification {
+    if (taxClassification != null) return taxClassification!;
+
+    final desc = (itemDescription ?? '').toUpperCase();
+    if (desc.contains('EXEMPT') || desc.contains('CAT C') || desc.contains('CATEGORY C') || desc.contains('FIRST SCHEDULE')) {
+      return TaxClassification.exempt;
+    }
+    if (desc.contains('ZERO') || desc.contains('0%') || desc.contains('EXPORT') || desc.contains('EPZ') || desc.contains('CAT B') || desc.contains('CATEGORY B') || desc.contains('SECOND SCHEDULE')) {
+      return TaxClassification.zeroRated;
+    }
+
+    if ((vatRate - 0.08).abs() < 0.01) {
+      return TaxClassification.eightPercent;
+    }
+    if ((vatRate - 0.16).abs() < 0.01 || vatAmount > 0) {
+      return TaxClassification.standard16;
+    }
+
+    if (vatAmount == 0 && taxableAmount > 0) {
+      return TaxClassification.zeroRated;
+    }
+
+    return TaxClassification.exempt;
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -161,6 +237,7 @@ class InvoiceRecord {
       'sourceType': sourceType.name,
       'invoiceType': invoiceType.name,
       'sectionType': sectionType.name,
+      'taxClassification': taxClassification?.name,
       'itemDescription': itemDescription,
       'costCenter': costCenter,
       'traderSystemInvoiceNumber': traderSystemInvoiceNumber,
@@ -189,8 +266,11 @@ class InvoiceRecord {
       invoiceType: InvoiceType.values.firstWhere((e) => e.name == json['invoiceType']),
       sectionType: SectionType.values.firstWhere(
         (e) => e.name == json['sectionType'],
-        orElse: () => SectionType.sectionBPurchases,
+        orElse: () => SectionType.sectionASales,
       ),
+      taxClassification: json['taxClassification'] != null
+          ? TaxClassification.values.firstWhere((e) => e.name == json['taxClassification'])
+          : null,
       itemDescription: json['itemDescription'],
       costCenter: json['costCenter'],
       traderSystemInvoiceNumber: json['traderSystemInvoiceNumber'],

@@ -88,7 +88,7 @@ class HistoricalTrendView extends StatelessWidget {
                 const SizedBox(width: 16),
                 _metricCard('eTIMS VERIFIED VAT', 'KES ${totalEtimsVat.toStringAsFixed(2)}', 'Safe Input Credits', LucideIcons.checkCircle, AppColors.mintAccent),
                 const SizedBox(width: 16),
-                _metricCard('CUMULATIVE VAA EXPOSURE', 'KES ${totalVaaRisk.toStringAsFixed(2)}', 'Penalty Risk Pool', LucideIcons.alertTriangle, AppColors.crimsonRisk),
+                _metricCard('CUMULATIVE VAA (Value Added Automated Audit) EXPOSURE', 'KES ${totalVaaRisk.toStringAsFixed(2)}', 'Penalty Risk Pool', LucideIcons.alertTriangle, AppColors.crimsonRisk),
               ],
             ),
             const SizedBox(height: 24),

@@ -398,6 +398,288 @@ class DemoDataGenerator {
     );
   }
 
+  /// Scenario 2: Nairobi Commercial Retailers Ltd (High VAA Exposure Risk)
+  static DemoDataSet generateNairobiRetailers() {
+    final client = getAdvisorClients()[1]; // Nairobi Commercial Retailers Ltd
+    final String period = '2026-08';
+    final String buyerPin = client.kraPin;
+    final String buyerName = client.businessName;
+
+    final List<InvoiceRecord> erp = [
+      InvoiceRecord(
+        id: 'NR-ERP-001',
+        invoiceNumber: 'BDC-NBI-1002',
+        etimsControlCode: '011020260802001192',
+        cuSerialNumber: 'KRA0991823-01',
+        supplierPin: 'P051188291A',
+        supplierName: 'Bidco Africa Ltd',
+        buyerPin: buyerPin,
+        buyerName: buyerName,
+        invoiceDate: DateTime(2026, 8, 2),
+        taxPeriod: period,
+        taxableAmount: 4800000.0,
+        vatAmount: 768000.0,
+        totalAmount: 5568000.0,
+        vatRate: 0.16,
+        sourceType: SourceType.erp,
+        sectionType: SectionType.sectionBPurchases,
+      ),
+      InvoiceRecord(
+        id: 'NR-ERP-002',
+        invoiceNumber: 'ULV-KEN-9921',
+        etimsControlCode: '011020260806004410',
+        cuSerialNumber: 'KRA0881920-02',
+        supplierPin: 'P051177290B',
+        supplierName: 'Unilever Kenya Ltd',
+        buyerPin: buyerPin,
+        buyerName: buyerName,
+        invoiceDate: DateTime(2026, 8, 6),
+        taxPeriod: period,
+        taxableAmount: 6200000.0,
+        vatAmount: 992000.0,
+        totalAmount: 7192000.0,
+        vatRate: 0.16,
+        sourceType: SourceType.erp,
+        sectionType: SectionType.sectionBPurchases,
+      ),
+      InvoiceRecord(
+        id: 'NR-ERP-003',
+        invoiceNumber: 'BRK-DAIRY-3310',
+        etimsControlCode: null, // VAA Risk
+        cuSerialNumber: null,
+        supplierPin: 'P051299381C',
+        supplierName: 'Brookside Dairy Ltd',
+        buyerPin: buyerPin,
+        buyerName: buyerName,
+        invoiceDate: DateTime(2026, 8, 14),
+        taxPeriod: period,
+        taxableAmount: 3903125.0,
+        vatAmount: 624500.0,
+        totalAmount: 4527625.0,
+        vatRate: 0.16,
+        sourceType: SourceType.erp,
+        sectionType: SectionType.sectionBPurchases,
+      ),
+    ];
+
+    final List<InvoiceRecord> etims = [
+      InvoiceRecord(
+        id: 'NR-ETM-001',
+        invoiceNumber: 'BDC-NBI-1002',
+        etimsControlCode: '011020260802001192',
+        cuSerialNumber: 'KRA0991823-01',
+        supplierPin: 'P051188291A',
+        supplierName: 'Bidco Africa Ltd',
+        buyerPin: buyerPin,
+        buyerName: buyerName,
+        invoiceDate: DateTime(2026, 8, 2),
+        taxPeriod: period,
+        taxableAmount: 4800000.0,
+        vatAmount: 768000.0,
+        totalAmount: 5568000.0,
+        vatRate: 0.16,
+        sourceType: SourceType.etims,
+        sectionType: SectionType.sectionBPurchases,
+      ),
+      InvoiceRecord(
+        id: 'NR-ETM-002',
+        invoiceNumber: 'ULV-KEN-9921',
+        etimsControlCode: '011020260806004410',
+        cuSerialNumber: 'KRA0881920-02',
+        supplierPin: 'P051177290B',
+        supplierName: 'Unilever Kenya Ltd',
+        buyerPin: buyerPin,
+        buyerName: buyerName,
+        invoiceDate: DateTime(2026, 8, 6),
+        taxPeriod: period,
+        taxableAmount: 6200000.0,
+        vatAmount: 992000.0,
+        totalAmount: 7192000.0,
+        vatRate: 0.16,
+        sourceType: SourceType.etims,
+        sectionType: SectionType.sectionBPurchases,
+      ),
+    ];
+
+    final List<InvoiceRecord> itax = List.from(etims);
+
+    return DemoDataSet(
+      client: client,
+      erpRecords: erp,
+      etimsRecords: etims,
+      itaxRecords: itax,
+    );
+  }
+
+  /// Scenario 3: Rift Valley Agriculture Exporters (100% Clean Baseline)
+  static DemoDataSet generateRiftValleyAgri() {
+    final client = getAdvisorClients()[2]; // Rift Valley Agriculture Exporters
+    final String period = '2026-08';
+    final String buyerPin = client.kraPin;
+    final String buyerName = client.businessName;
+
+    final List<InvoiceRecord> erp = [
+      InvoiceRecord(
+        id: 'RVA-ERP-001',
+        invoiceNumber: 'TEA-EXP-2026-01',
+        etimsControlCode: '011020260801009988',
+        cuSerialNumber: 'KRA0551928-01',
+        supplierPin: 'P051339920K',
+        supplierName: 'Kenya Tea Packers (KETEPA)',
+        buyerPin: buyerPin,
+        buyerName: buyerName,
+        invoiceDate: DateTime(2026, 8, 3),
+        taxPeriod: period,
+        taxableAmount: 9450000.0,
+        vatAmount: 0.0, // Zero rated export Category B
+        totalAmount: 9450000.0,
+        vatRate: 0.0,
+        sourceType: SourceType.erp,
+        taxClassification: TaxClassification.zeroRated,
+        sectionType: SectionType.sectionASales,
+      ),
+      InvoiceRecord(
+        id: 'RVA-ERP-002',
+        invoiceNumber: 'YARA-FERT-8821',
+        etimsControlCode: '011020260805004419',
+        cuSerialNumber: 'KRA0662819-02',
+        supplierPin: 'P051449910Y',
+        supplierName: 'Yara East Africa Fertilizers',
+        buyerPin: buyerPin,
+        buyerName: buyerName,
+        invoiceDate: DateTime(2026, 8, 7),
+        taxPeriod: period,
+        taxableAmount: 9450000.0,
+        vatAmount: 1512000.0,
+        totalAmount: 10962000.0,
+        vatRate: 0.16,
+        sourceType: SourceType.erp,
+        sectionType: SectionType.sectionBPurchases,
+      ),
+    ];
+
+    final List<InvoiceRecord> etims = List.from(erp);
+    final List<InvoiceRecord> itax = List.from(erp);
+
+    return DemoDataSet(
+      client: client,
+      erpRecords: erp,
+      etimsRecords: etims,
+      itaxRecords: itax,
+    );
+  }
+
+  /// Scenario 4: Coastline Hospitality & Resorts Group
+  static DemoDataSet generateCoastlineHospitality() {
+    final client = getAdvisorClients()[3]; // Coastline Hospitality
+    final String period = '2026-08';
+    final String buyerPin = client.kraPin;
+    final String buyerName = client.businessName;
+
+    final List<InvoiceRecord> erp = [
+      InvoiceRecord(
+        id: 'CH-ERP-001',
+        invoiceNumber: 'MSA-HOTEL-4401',
+        etimsControlCode: '011020260804008812',
+        cuSerialNumber: 'KRA0773910-01',
+        supplierPin: 'P051662910M',
+        supplierName: 'Mombasa Linen & Catering Ltd',
+        buyerPin: buyerPin,
+        buyerName: buyerName,
+        invoiceDate: DateTime(2026, 8, 4),
+        taxPeriod: period,
+        taxableAmount: 8100000.0,
+        vatAmount: 1296000.0,
+        totalAmount: 9396000.0,
+        vatRate: 0.16,
+        sourceType: SourceType.erp,
+        sectionType: SectionType.sectionBPurchases,
+      ),
+    ];
+
+    final List<InvoiceRecord> etims = List.from(erp);
+    final List<InvoiceRecord> itax = List.from(erp);
+
+    return DemoDataSet(
+      client: client,
+      erpRecords: erp,
+      etimsRecords: etims,
+      itaxRecords: itax,
+    );
+  }
+
+  /// Generic dynamic dataset generator for custom added taxpayer companies
+  static DemoDataSet generateGenericClientDataset(TaxpayerClient client) {
+    final String period = client.currentTaxPeriod.contains('-') ? client.currentTaxPeriod : '2026-08';
+    final String buyerPin = client.kraPin;
+    final String buyerName = client.businessName;
+
+    final List<InvoiceRecord> erp = [
+      InvoiceRecord(
+        id: 'GEN-ERP-001',
+        invoiceNumber: 'INV-${client.kraPin.substring(0, 4)}-01',
+        etimsControlCode: '011020260801001100',
+        cuSerialNumber: 'KRA0112233-01',
+        supplierPin: 'P0511192931Z',
+        supplierName: 'Safaricom Enterprise Solutions',
+        buyerPin: buyerPin,
+        buyerName: buyerName,
+        invoiceDate: DateTime(2026, 8, 2),
+        taxPeriod: period,
+        taxableAmount: 500000.0,
+        vatAmount: 80000.0,
+        totalAmount: 580000.0,
+        vatRate: 0.16,
+        sourceType: SourceType.erp,
+        sectionType: SectionType.sectionBPurchases,
+      ),
+      InvoiceRecord(
+        id: 'GEN-ERP-002',
+        invoiceNumber: 'INV-${client.kraPin.substring(0, 4)}-02',
+        etimsControlCode: '011020260805002200',
+        cuSerialNumber: 'KRA0223344-02',
+        supplierPin: 'P051101992A',
+        supplierName: 'Kenya Power & Lighting Co.',
+        buyerPin: buyerPin,
+        buyerName: buyerName,
+        invoiceDate: DateTime(2026, 8, 8),
+        taxPeriod: period,
+        taxableAmount: 1200000.0,
+        vatAmount: 192000.0,
+        totalAmount: 1392000.0,
+        vatRate: 0.16,
+        sourceType: SourceType.erp,
+        sectionType: SectionType.sectionBPurchases,
+      ),
+    ];
+
+    final List<InvoiceRecord> etims = List.from(erp);
+    final List<InvoiceRecord> itax = List.from(erp);
+
+    return DemoDataSet(
+      client: client,
+      erpRecords: erp,
+      etimsRecords: etims,
+      itaxRecords: itax,
+    );
+  }
+
+  /// Maps a TaxpayerClient to its specific isolated DemoDataSet
+  static DemoDataSet getDatasetForClient(TaxpayerClient client) {
+    switch (client.id) {
+      case 'CLI-001':
+        return generateApexLogistics();
+      case 'CLI-002':
+        return generateNairobiRetailers();
+      case 'CLI-003':
+        return generateRiftValleyAgri();
+      case 'CLI-004':
+        return generateCoastlineHospitality();
+      default:
+        return generateGenericClientDataset(client);
+    }
+  }
+
   /// List of additional demo tax clients for the Advisor Portal
   static List<TaxpayerClient> getAdvisorClients() {
     return [

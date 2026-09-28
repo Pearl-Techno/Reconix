@@ -39,11 +39,15 @@ class DashboardView extends StatelessWidget {
                   context,
                   title: 'Claimable Input VAT (Matched)',
                   value: 'KES ${numberFormat.format(state.totalInputVatClaimable)}',
-                  subtitle: 'Cleared for iTax Section B filing',
+                  subtitle: state.rules.autoCalculate16PercentVat
+                      ? 'Cleared for iTax Section B filing'
+                      : 'Requires Vatable transaction toggle',
                   icon: LucideIcons.checkCircle2,
                   iconColor: AppColors.mintAccent,
-                  badgeText: '${state.matchedRatioPercentage.toStringAsFixed(1)}% Matched',
-                  badgeColor: AppColors.mintAccent,
+                  badgeText: state.rules.autoCalculate16PercentVat
+                      ? '${state.matchedRatioPercentage.toStringAsFixed(1)}% Matched'
+                      : 'Vatable Mode Off',
+                  badgeColor: state.rules.autoCalculate16PercentVat ? AppColors.mintAccent : AppColors.textMuted,
                 ),
               ),
               const SizedBox(width: 12),
@@ -52,11 +56,15 @@ class DashboardView extends StatelessWidget {
                   context,
                   title: 'Unclaimed Input VAT Risk',
                   value: 'KES ${numberFormat.format(state.totalInputVatAtRisk)}',
-                  subtitle: 'Omitted from pre-filled return',
+                  subtitle: state.rules.autoCalculate16PercentVat
+                      ? 'Omitted from pre-filled return'
+                      : 'Requires Vatable transaction toggle',
                   icon: LucideIcons.alertTriangle,
                   iconColor: AppColors.warningOrange,
-                  badgeText: '${state.unclaimedVatCount} Invoices',
-                  badgeColor: AppColors.warningOrange,
+                  badgeText: state.rules.autoCalculate16PercentVat
+                      ? '${state.unclaimedVatCount} Invoices'
+                      : '0 Invoices',
+                  badgeColor: state.rules.autoCalculate16PercentVat ? AppColors.warningOrange : AppColors.textMuted,
                 ),
               ),
               const SizedBox(width: 12),
@@ -68,7 +76,7 @@ class DashboardView extends StatelessWidget {
                   subtitle: 'Books purchases lacking eTIMS code',
                   icon: LucideIcons.shieldAlert,
                   iconColor: AppColors.crimsonRisk,
-                  badgeText: '${state.vaaRiskCount} VAA Exposures',
+                  badgeText: '${state.expenseRiskCount} Sec 16(1) Risks',
                   badgeColor: AppColors.crimsonRisk,
                 ),
               ),
@@ -239,10 +247,14 @@ class DashboardView extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 16,
+        runSpacing: 12,
         children: [
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
                 padding: const EdgeInsets.all(12),
@@ -258,27 +270,28 @@ class DashboardView extends StatelessWidget {
                 children: [
                   Text(
                     '20th VAT 7 Filing Readiness Window - ${state.selectedTaxPeriod}',
-                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Reconcile eTIMS/TIMS invoices against internal ledgers before KRA iTax lock-in.',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 12),
                   ),
                 ],
               ),
             ],
           ),
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,
                   side: const BorderSide(color: Colors.white70),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 ),
-                icon: const Icon(LucideIcons.listChecks, size: 18),
-                label: const Text('VAT 7 Filing Checklist', style: TextStyle(fontWeight: FontWeight.bold)),
+                icon: const Icon(LucideIcons.listChecks, size: 16),
+                label: const Text('VAT 7 Filing Checklist', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                 onPressed: () {
                   showDialog(
                     context: context,
@@ -290,15 +303,15 @@ class DashboardView extends StatelessWidget {
                   );
                 },
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.kraGold,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
-                icon: const Icon(LucideIcons.fileCheck2, size: 18),
-                label: const Text('Evidence Pack PDF', style: TextStyle(fontWeight: FontWeight.bold)),
+                icon: const Icon(LucideIcons.fileCheck2, size: 16),
+                label: const Text('Evidence Pack PDF', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                 onPressed: () => state.setActiveTab(4),
               ),
             ],
@@ -320,39 +333,58 @@ class DashboardView extends StatelessWidget {
   }) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(icon, color: iconColor, size: 24),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: badgeColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    badgeText,
-                    style: TextStyle(color: badgeColor, fontSize: 11, fontWeight: FontWeight.bold),
+                Icon(icon, color: iconColor, size: 22),
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: badgeColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      badgeText,
+                      style: TextStyle(color: badgeColor, fontSize: 10, fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            Text(title, style: Theme.of(context).textTheme.bodyMedium),
-            const SizedBox(height: 4),
+            const SizedBox(height: 12),
             Text(
-              value,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
+              title,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 12),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+              ),
             ),
             const SizedBox(height: 6),
-            Text(subtitle, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+            Text(
+              subtitle,
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
       ),
@@ -420,6 +452,15 @@ class DashboardView extends StatelessWidget {
   }
 
   Widget _buildExceptionBreakdownCard(BuildContext context, AppState state) {
+    final matchedCount = state.reconciliationResults.where((m) => m.status == MatchStatus.matched).length.toDouble();
+    final timingCount = state.timingLatencyCount.toDouble();
+    final unclaimedCount = state.unclaimedVatCount.toDouble();
+    final vaaCount = state.vaaRiskCount.toDouble();
+    final expCount = state.reconciliationResults.where((m) => m.status == MatchStatus.expenseValidationRisk2026).length.toDouble();
+
+    final maxVal = [matchedCount, timingCount, unclaimedCount, vaaCount, expCount].reduce((a, b) => a > b ? a : b);
+    final calculatedMaxY = maxVal > 0 ? maxVal * 1.15 : 10.0;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -430,46 +471,48 @@ class DashboardView extends StatelessWidget {
             const SizedBox(height: 16),
             SizedBox(
               height: 180,
-              child: BarChart(
-                BarChartData(
-                  alignment: BarChartAlignment.spaceAround,
-                  maxY: 10,
-                  barTouchData: BarTouchData(enabled: true),
-                  titlesData: FlTitlesData(
-                    show: true,
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (val, meta) {
-                          switch (val.toInt()) {
-                            case 0:
-                              return const Text('Matched', style: TextStyle(fontSize: 10, color: AppColors.textMuted));
-                            case 1:
-                              return const Text('Timing', style: TextStyle(fontSize: 10, color: AppColors.textMuted));
-                            case 2:
-                              return const Text('Unclaimed', style: TextStyle(fontSize: 10, color: AppColors.textMuted));
-                            case 3:
-                              return const Text('VAA Risk', style: TextStyle(fontSize: 10, color: AppColors.textMuted));
-                            case 4:
-                              return const Text('2026 Exp', style: TextStyle(fontSize: 10, color: AppColors.textMuted));
-                            default:
-                              return const Text('');
-                          }
-                        },
+              child: ClipRect(
+                child: BarChart(
+                  BarChartData(
+                    alignment: BarChartAlignment.spaceAround,
+                    maxY: calculatedMaxY,
+                    barTouchData: BarTouchData(enabled: true),
+                    titlesData: FlTitlesData(
+                      show: true,
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          getTitlesWidget: (val, meta) {
+                            switch (val.toInt()) {
+                              case 0:
+                                return const Text('Matched', style: TextStyle(fontSize: 10, color: AppColors.textMuted));
+                              case 1:
+                                return const Text('Timing', style: TextStyle(fontSize: 10, color: AppColors.textMuted));
+                              case 2:
+                                return const Text('Unclaimed', style: TextStyle(fontSize: 10, color: AppColors.textMuted));
+                              case 3:
+                                return const Text('VAA (Value Added Automated Audit) Risk', style: TextStyle(fontSize: 10, color: AppColors.textMuted));
+                              case 4:
+                                return const Text('2026 Exp', style: TextStyle(fontSize: 10, color: AppColors.textMuted));
+                              default:
+                                return const Text('');
+                            }
+                          },
+                        ),
                       ),
+                      leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     ),
-                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    borderData: FlBorderData(show: false),
+                    barGroups: [
+                      _makeBarGroup(0, matchedCount, AppColors.mintAccent),
+                      _makeBarGroup(1, timingCount, AppColors.infoBlue),
+                      _makeBarGroup(2, unclaimedCount, AppColors.warningOrange),
+                      _makeBarGroup(3, vaaCount, AppColors.crimsonRisk),
+                      _makeBarGroup(4, expCount, AppColors.kraGold),
+                    ],
                   ),
-                  borderData: FlBorderData(show: false),
-                  barGroups: [
-                    _makeBarGroup(0, state.reconciliationResults.where((m) => m.status == MatchStatus.matched).length.toDouble(), AppColors.mintAccent),
-                    _makeBarGroup(1, state.timingLatencyCount.toDouble(), AppColors.infoBlue),
-                    _makeBarGroup(2, state.unclaimedVatCount.toDouble(), AppColors.warningOrange),
-                    _makeBarGroup(3, state.vaaRiskCount.toDouble(), AppColors.crimsonRisk),
-                    _makeBarGroup(4, state.reconciliationResults.where((m) => m.status == MatchStatus.expenseValidationRisk2026).length.toDouble(), AppColors.kraGold),
-                  ],
                 ),
               ),
             ),

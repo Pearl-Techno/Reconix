@@ -23,7 +23,7 @@ class _SampleTemplatesDialogState extends State<SampleTemplatesDialog> with Sing
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 7, vsync: this);
   }
 
   @override
@@ -41,8 +41,8 @@ class _SampleTemplatesDialogState extends State<SampleTemplatesDialog> with Sing
         side: const BorderSide(color: AppColors.darkBorder),
       ),
       child: Container(
-        width: 860,
-        height: 650,
+        width: 920,
+        height: 670,
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,7 +69,7 @@ class _SampleTemplatesDialogState extends State<SampleTemplatesDialog> with Sing
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'Preview sample file formats and download pre-filled CSV templates for your data imports.',
+                        'Preview file formats and download pre-filled templates for Sales (B2B/B2C), Purchases (With/No PIN), eTIMS, and iTax schedules.',
                         style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                       ),
                     ],
@@ -94,10 +94,12 @@ class _SampleTemplatesDialogState extends State<SampleTemplatesDialog> with Sing
               isScrollable: true,
               tabs: const [
                 Tab(icon: Icon(LucideIcons.qrCode, size: 15), text: '1. eTIMS Export'),
-                Tab(icon: Icon(LucideIcons.bookOpen, size: 15), text: '2. ERP Purchase Ledger'),
-                Tab(icon: Icon(LucideIcons.fileText, size: 15), text: '3. iTax Section B'),
-                Tab(icon: Icon(LucideIcons.shieldCheck, size: 15), text: '4. WHVAT 2% Certificates'),
-                Tab(icon: Icon(LucideIcons.ship, size: 15), text: '5. Customs C17 Imports'),
+                Tab(icon: Icon(LucideIcons.shoppingBag, size: 15), text: '2. Purchase (With PIN)'),
+                Tab(icon: Icon(LucideIcons.receipt, size: 15), text: '3. Purchase (No PIN / Cash)'),
+                Tab(icon: Icon(LucideIcons.arrowUpRight, size: 15), text: '4. Sales (With Buyer PIN)'),
+                Tab(icon: Icon(LucideIcons.users, size: 15), text: '5. Sales (No PIN / B2C)'),
+                Tab(icon: Icon(LucideIcons.fileText, size: 15), text: '6. iTax Section B'),
+                Tab(icon: Icon(LucideIcons.shieldCheck, size: 15), text: '7. WHVAT 2% Credits'),
               ],
             ),
             const SizedBox(height: 16),
@@ -115,11 +117,32 @@ class _SampleTemplatesDialogState extends State<SampleTemplatesDialog> with Sing
                     requiredColumns: ['Invoice Number', 'Supplier Name', 'Supplier PIN', 'Invoice Date', 'Taxable Amount', 'VAT Amount', 'eTIMS Control Code'],
                   ),
                   _buildTemplateView(
-                    title: 'ERP Purchase Ledger CSV Template (QuickBooks / SAP / Tally / Sage)',
-                    description: 'Used for importing internal accounting books. Invoices missing eTIMS control codes will be flagged as VAA disallowance risks.',
-                    csvContent: SampleTemplateService.erpSampleCsv,
-                    fileName: 'erp_purchase_ledger_sample.csv',
+                    title: 'ERP Purchase Ledger (With Supplier PINs - B2B Input VAT)',
+                    description: 'Import B2B purchase ledger entries with valid vendor KRA PINs for Section B Input VAT deduction claims.',
+                    csvContent: SampleTemplateService.erpPurchaseWithPinCsv,
+                    fileName: 'purchase_ledger_with_pin_sample.csv',
                     requiredColumns: ['Invoice Number', 'Supplier Name', 'Supplier PIN', 'Invoice Date', 'Taxable Amount', 'VAT Amount'],
+                  ),
+                  _buildTemplateView(
+                    title: 'ERP Purchase Ledger (Without Supplier PINs - Cash/General Merchant)',
+                    description: 'Import non-VAT/no-PIN merchant expenses. Declared under General Merchant / Un-registered vendor schedule in Section B.',
+                    csvContent: SampleTemplateService.erpPurchaseNoPinCsv,
+                    fileName: 'purchase_ledger_no_pin_sample.csv',
+                    requiredColumns: ['Invoice Number', 'Supplier Name', 'Supplier PIN (NON-VAT-SUPPLIER / NO-PIN)', 'Invoice Date', 'Taxable Amount', 'VAT Amount'],
+                  ),
+                  _buildTemplateView(
+                    title: 'ERP Sales Ledger (With Buyer KRA PINs - B2B Output VAT)',
+                    description: 'Import B2B sales register entries with customer KRA PINs for Section A Output VAT schedule auto-population.',
+                    csvContent: SampleTemplateService.erpSalesWithPinCsv,
+                    fileName: 'sales_ledger_with_buyer_pin_sample.csv',
+                    requiredColumns: ['Invoice Number', 'Customer Name', 'Customer PIN', 'Invoice Date', 'Taxable Amount', 'VAT Amount'],
+                  ),
+                  _buildTemplateView(
+                    title: 'ERP Sales Ledger (Without Buyer PINs - B2C / Retail Cash Sales)',
+                    description: 'Import B2C consumer cash sales without customer PINs (e.g., retail counter, walk-in cash customers).',
+                    csvContent: SampleTemplateService.erpSalesNoPinCsv,
+                    fileName: 'sales_ledger_b2c_no_pin_sample.csv',
+                    requiredColumns: ['Invoice Number', 'Customer Name', 'Customer PIN (NO-PIN / B2C-CONSUMER)', 'Invoice Date', 'Taxable Amount', 'VAT Amount'],
                   ),
                   _buildTemplateView(
                     title: 'iTax Section B Pre-Filled Input VAT Schedule CSV Template',
@@ -134,13 +157,6 @@ class _SampleTemplatesDialogState extends State<SampleTemplatesDialog> with Sing
                     csvContent: SampleTemplateService.whvatSampleCsv,
                     fileName: 'whvat_2percent_sample.csv',
                     requiredColumns: ['Certificate Number', 'Withholding Agent Name', 'Agent KRA PIN', 'Tax Period', 'WHVAT Deducted 2% (KES)'],
-                  ),
-                  _buildTemplateView(
-                    title: 'Customs Import C17 Entry Ledger CSV Template (SIMBA / ICMS)',
-                    description: 'Customs C17 import entries from Mombasa Port / JKIA Airport for Section C input VAT claims.',
-                    csvContent: SampleTemplateService.customsSampleCsv,
-                    fileName: 'customs_c17_import_sample.csv',
-                    requiredColumns: ['Entry Number', 'Customs Office', 'Declarant PIN', 'Importer Name', 'CIF Value KES', 'Import VAT 16% KES'],
                   ),
                 ],
               ),
